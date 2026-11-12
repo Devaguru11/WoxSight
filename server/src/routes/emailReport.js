@@ -29,8 +29,8 @@ function loadBase64(filePath, mime) {
   } catch { return null; }
 }
 
-const MEGHAVI_LOGO_URI     = loadBase64(path.join(PUBLIC_DIR, "meghavi.png"),          "image/png");
-const ACCESSGENIE_LOGO_URI = loadBase64(path.join(PUBLIC_DIR, "AccessGenieLogo.svg"),  "image/svg+xml");
+const MEGHAVI_LOGO_URI     = loadBase64(path.join(PUBLIC_DIR, "brand", "woxsen-logo.png"), "image/png");
+const ACCESSGENIE_LOGO_URI = loadBase64(path.join(PUBLIC_DIR, "brand", "woxsen-logo.png"), "image/png");
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -294,13 +294,13 @@ function buildHtml(from, to, walkins, meetGreet, staff, alerts, waitingTime = {}
   }
 
   const meghaviLogoHtml = MEGHAVI_LOGO_URI
-    ? `<img src="${MEGHAVI_LOGO_URI}" alt="Meghavi" style="height:44px;width:auto;object-fit:contain;display:block"/>`
+    ? `<img src="${MEGHAVI_LOGO_URI}" alt="Woxsen University" style="height:44px;width:auto;object-fit:contain;display:block"/>`
     : "";
   const agLogoHtml = ACCESSGENIE_LOGO_URI
-    ? `<img src="${ACCESSGENIE_LOGO_URI}" alt="AccessGenie" style="height:28px;width:auto;object-fit:contain;display:block"/>`
-    : `<span style="font-weight:700;color:#256BAE;font-size:12px">AccessGenie</span>`;
+    ? `<img src="${ACCESSGENIE_LOGO_URI}" alt="Woxsen University" style="height:28px;width:auto;object-fit:contain;display:block"/>`
+    : `<span style="font-weight:700;color:#EE4860;font-size:12px">WoxSight</span>`;
   const agFooterHtml = ACCESSGENIE_LOGO_URI
-    ? `<img src="${ACCESSGENIE_LOGO_URI}" alt="AccessGenie" style="height:15px;width:auto;opacity:0.5;vertical-align:middle"/>`
+    ? `<img src="${ACCESSGENIE_LOGO_URI}" alt="Woxsen University" style="height:15px;width:auto;opacity:0.5;vertical-align:middle"/>`
     : "";
 
   return `<!DOCTYPE html>
@@ -328,16 +328,16 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 3px solid #0B4964;
+  border-bottom: 3px solid #EE4860;
   padding-bottom: 14px;
   margin-bottom: 20px;
 }
 .header-left  { display: flex; align-items: center; gap: 12px; }
 .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
-.brand        { font-size: 18px; font-weight: 800; color: #0B4964; letter-spacing: -0.3px; line-height: 1.2; }
-.brand-sub    { font-size: 10.5px; color: #64748b; margin-top: 2px; }
+.brand        { font-size: 18px; font-weight: 800; color: #EE4860; letter-spacing: -0.3px; line-height: 1.2; }
+.brand-sub    { font-size: 10.5px; color: #6B6B6E; margin-top: 2px; }
 .meta         { font-size: 10.5px; color: #64748b; line-height: 1.65; text-align: right; }
-.meta strong  { display: block; color: #0B4964; font-size: 12px; font-weight: 700; }
+.meta strong  { display: block; color: #EE4860; font-size: 12px; font-weight: 700; }
 
 /* ── Sections ───────────────────────────────────────────────────────── */
 .section {
@@ -348,10 +348,10 @@ body {
 .section-title {
   font-size: 10.5px;
   font-weight: 800;
-  color: #0B4964;
+  color: #EE4860;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  border-left: 3px solid #0B4964;
+  border-left: 3px solid #EE4860;
   padding: 1px 0 1px 9px;
   margin-bottom: 14px;
   break-after: avoid;
@@ -385,7 +385,7 @@ body {
 .exec-num {
   font-size: 28px;
   font-weight: 800;
-  color: #0B4964;
+  color: #EE4860;
   line-height: 1;
   letter-spacing: -0.5px;
 }
@@ -417,7 +417,7 @@ body {
 .kpi-card .v {
   font-size: 20px;
   font-weight: 800;
-  color: #0B4964;
+  color: #EE4860;
   line-height: 1.1;
   letter-spacing: -0.3px;
   word-break: break-word;
@@ -458,7 +458,7 @@ table {
 }
 colgroup col { /* per-table overrides via style="" */ }
 th {
-  background: #0B4964;
+  background: #EE4860;
   color: #fff;
   padding: 8px 10px;
   text-align: left;
@@ -529,8 +529,8 @@ tr:nth-child(even) td { background: #f8fafc; }
   <div class="header-left">
     ${meghaviLogoHtml}
     <div>
-      <div class="brand">MEGHAVI WELLNESS SPA</div>
-      <div class="brand-sub">Video Analytics Report</div>
+      <div class="brand">WOXSIGHT — WOXSEN UNIVERSITY</div>
+      <div class="brand-sub">Campus Video Analytics Report</div>
     </div>
   </div>
   <div class="header-right">
@@ -620,7 +620,7 @@ tr:nth-child(even) td { background: #f8fafc; }
         <td>${friskingBag.total_detections} detection${friskingBag.total_detections !== 1 ? "s" : ""}</td>
         <td>${friskingBag.unique_track_ids} unique objects&nbsp;&middot;&nbsp;Owner assoc.: ${friskingBag.owner_association_rate}%</td>
         <td>${friskingBag.total_detections > 0
-          ? `<span style="color:#0B4964;font-weight:700">${friskingBag.total_detections} Event${friskingBag.total_detections !== 1 ? "s" : ""}</span>`
+          ? `<span style="color:#EE4860;font-weight:700">${friskingBag.total_detections} Event${friskingBag.total_detections !== 1 ? "s" : ""}</span>`
           : '<span style="color:#64748b">None</span>'}</td>
       </tr>
     </tbody>
@@ -870,7 +870,7 @@ tr:nth-child(even) td { background: #f8fafc; }
 <!-- FOOTER -->
 <div class="footer">
   ${agFooterHtml}
-  <span>Automatically generated by Meghavi Wellness Video Analytics &bull; AccessGenie &bull; ${generated} IST</span>
+  <span>Automatically generated by WoxSight &bull; Woxsen University Campus Video Analytics &bull; ${generated} IST</span>
 </div>
 
 </div>
@@ -907,14 +907,14 @@ async function sendReport({ from, to, recipients }) {
   const pdfBuf = await generatePdf(html);
 
   const dateLabel    = from === to ? from : `${from} to ${to}`;
-  const subject      = `Meghavi Wellness — Daily Analytics Report (${dateLabel})`;
+  const subject      = `WoxSight — Campus Video Analytics Report (${dateLabel})`;
   const anomalies    = buildAnomalies(walkins, meetGreet, staff);
   const highAnoms    = anomalies.filter(a => a.severity === "High" || a.severity === "Critical").length;
 
   const mailBody = `
 Hello,
 
-Please find attached the Meghavi Wellness Video Analytics Report for ${dateLabel}.
+Please find attached the WoxSight Campus Video Analytics Report for ${dateLabel}.
 
 SUMMARY
 ──────────────────────────────
@@ -928,19 +928,19 @@ Anomalies       : ${anomalies.length} detected${highAnoms > 0 ? ` (${highAnoms} 
 Full details are available in the attached PDF report.
 
 ──────────────────────────────
-Meghavi Wellness Video Analytics
-Powered by AccessGenie
+WoxSight — Campus Video Analytics
+Woxsen University
 Generated: ${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST
   `.trim();
 
   const transport = mailer();
   await transport.sendMail({
-    from: `"Meghavi Analytics" <${process.env.GMAIL_USER}>`,
+    from: `"WoxSight Analytics" <${process.env.GMAIL_USER}>`,
     to: recipients.join(", "),
     subject,
     text: mailBody,
     attachments: [{
-      filename: `meghavi-report-${dateLabel}.pdf`,
+      filename: `woxsight-report-${dateLabel}.pdf`,
       content: pdfBuf,
       contentType: "application/pdf",
     }],

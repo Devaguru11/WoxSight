@@ -6,10 +6,10 @@
 --   psql -U aiserver -h 127.0.0.1 -p 5435 -d aiserver -f server/sql/meghavi_staff_videos_seed.sql
 -- ---------------------------------------------------------------------------
 
--- Insert the video camera (Reception Video 1 → Gachibowli Complex)
+-- Insert the video camera (Reception Video 1 → Woxsen)
 INSERT INTO meghavi_cameras (camera_key, location_id, display_name, area)
 SELECT 'video-01', id, 'Reception Video 1', 'Reception'
-FROM   meghavi_locations WHERE name = 'Gachibowli Complex'
+FROM   meghavi_locations WHERE name = 'Woxsen'
 ON CONFLICT (camera_key) DO NOTHING;
 
 -- Enable staff_availability module for this camera

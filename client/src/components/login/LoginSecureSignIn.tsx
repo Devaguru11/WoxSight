@@ -21,7 +21,6 @@ import { useAuth } from "../../auth/AuthContext";
 import { SITE_BRANDING, SITE_LABELS } from "../../i18n/lang";
 import { ds } from "../../lib/dsTokens";
 import { loginPalette } from "./loginTheme";
-import { PoweredByBcss } from "../PoweredByBcss";
 
 
 const fieldSx = {
@@ -112,8 +111,8 @@ export function LoginSecureSignIn() {
             }}
           >
             <img
-              src={`${import.meta.env.BASE_URL}meghavi.png`}
-              alt="Meghavi Wellness"
+              src={`${import.meta.env.BASE_URL}brand/woxsen-logo.png`}
+              alt="Woxsen University"
               style={{ height: 32, width: "auto" }}
             />
           </Box>
@@ -168,7 +167,7 @@ export function LoginSecureSignIn() {
               label="Email Address"
               type="email"
               autoComplete="username"
-              placeholder="you@meghaviwellness.com"
+              placeholder="you@woxsen.edu.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -259,10 +258,6 @@ export function LoginSecureSignIn() {
           </Stack>
         </Box>
 
-        {/* Powered by Blue Cloud */}
-        <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
-          <PoweredByBcss variant="loginCard" />
-        </Box>
       </Box>
     </Box>
   );

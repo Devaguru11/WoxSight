@@ -14,12 +14,12 @@ import { contentCardSx, pageLayoutSx } from "./uiSurfaces";
 // types a URL or calls the endpoint directly is still refused.
 
 export type PageKey =
-  // Meghavi Wellness Analytics
+  // WoxSight Analytics
   | "meghavi_dashboard" | "meghavi_walkins" | "meghavi_meet_greet"
   | "meghavi_staff_unavailability" | "meghavi_waiting_time"
   | "meghavi_frisking_bag"
   | "meghavi_alerts" | "meghavi_reports" | "meghavi_cameras"
-  // AccessGenie / Legacy
+  // Legacy modules
   | "dashboard" | "daily_briefing"
   | "monitoring_walkins" | "monitoring_loitering" | "monitoring_intrusion"
   | "monitoring_after_hours" | "monitoring_kitchen" | "monitoring_chef_absence"

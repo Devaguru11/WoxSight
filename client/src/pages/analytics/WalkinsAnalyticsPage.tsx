@@ -1,45 +1,26 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
-  Box, Paper, Typography, Select, MenuItem, FormControl, InputLabel,
-  Button, IconButton, TextField,
-  Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow,
-  CircularProgress,
+  Box, Paper, Typography, Select, MenuItem, FormControl, Chip,
 } from "@mui/material";
+import { MediaDialog } from "../../components/meghavi/MeghaviMediaViewer";
 import DirectionsWalkOutlinedIcon from "@mui/icons-material/DirectionsWalkOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
-import ViewListOutlinedIcon from "@mui/icons-material/ViewListOutlined";
-import GridViewOutlinedIcon from "@mui/icons-material/GridViewOutlined";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
-import { useWalkinsAnalytics, todayIST, yesterdayIST, sevenDaysAgoIST } from "../../lib/meghaviApi";
-import { MediaDialog } from "../../components/meghavi/MeghaviMediaViewer";
+import { ds } from "../../lib/dsTokens";
+import { useWalkinsAnalytics, todayIST, sevenDaysAgoIST } from "../../lib/meghaviApi";
 
-function remapWalkinTime(iso: string, id: number | string): Date {
-  const d = new Date(iso);
-  // IST = UTC + 5h30m = UTC + 330 min
-  const istHour = Math.floor((d.getUTCHours() * 60 + d.getUTCMinutes() + 330) / 60) % 24;
-  if (istHour >= 11) return d;
-  const seed = typeof id === "number" ? id : parseInt(String(id), 10) || 0;
-  const r  = Math.abs(Math.sin(seed * 9301 + 49297));
-  const r2 = Math.abs(Math.sin(seed * 233  + 7));
-  const hour   = 11 + Math.floor(r * 7);
-  const minute = hour === 11 ? 30 + Math.floor(r2 * 30) : Math.floor(r2 * 60);
-  const out = new Date(d);
-  out.setUTCHours(hour - 5, minute - 30, 0, 0); // IST→UTC: subtract 5h30m
-  return out;
-}
+const CARD_STYLE = {
+  p: 0,
+  borderRadius: "14px",
+  bgcolor: "#FFFFFF",
+  border: "1px solid #DCE7E8",
+  boxShadow: "0 1px 4px rgba(11,73,100,0.05)",
+  overflow: "hidden",
+} as const;
 
 const KPI_COLORS = [
   { bg: "#E8F3EE", color: "#5C9270" },
@@ -48,124 +29,58 @@ const KPI_COLORS = [
   { bg: "#EAF3F5", color: "#0B4964" },
 ];
 
-const WALKINS_PAGE_SIZE = 20;
-
-const CARD_STYLE = { p: 0, borderRadius: "14px", bgcolor: "#FFFFFF", border: "1px solid #DCE7E8", boxShadow: "0 1px 4px rgba(11,73,100,0.05)", overflow: "hidden" } as const;
-
 export function WalkinsAnalyticsPage() {
-  const [rangeFilter, setRangeFilter] = useState<"today" | "yesterday" | "7d">("7d");
-  const [tablePage, setTablePage] = useState(0);
+  const [rangeFilter, setRangeFilter] = useState<"today" | "yesterday" | "7d">("today");
   const [mediaOpen, setMediaOpen] = useState(false);
-  const [mediaIdx, setMediaIdx] = useState(0);
-  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
-  const [dismissedIds, setDismissedIds] = useState<Set<number | string>>(new Set());
+  const [mediaIdx,  setMediaIdx]  = useState(0);
 
-  // Event-table filters
   const today = todayIST();
-  const [filterFrom, setFilterFrom] = useState(today);
-  const [filterTo, setFilterTo] = useState(today);
-  const [filterCamera, setFilterCamera] = useState("all");
-  const [filterEventType, setFilterEventType] = useState("all");
+  const yesterday = new Date(new Date(today).getTime() - 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const sevenDaysAgo = sevenDaysAgoIST();
 
-  const fetchFrom = rangeFilter === "7d" ? sevenDaysAgoIST() : rangeFilter === "yesterday" ? yesterdayIST() : today;
-  const fetchTo   = rangeFilter === "yesterday" ? yesterdayIST() : today;
+  const from = rangeFilter === "today" ? today : rangeFilter === "yesterday" ? yesterday : sevenDaysAgo;
+  const to   = rangeFilter === "yesterday" ? yesterday : today;
 
-  // Everything (KPI cards, charts, events table) is driven by the filter bar dates
-  const { analytics: walkinsData, loading: eventsLoading } = useWalkinsAnalytics(filterFrom, filterTo);
+  const { analytics } = useWalkinsAnalytics(from, to);
 
-  // Sync event filter dates when top range changes
-  useEffect(() => {
-    setFilterFrom(fetchFrom);
-    setFilterTo(fetchTo);
-    setTablePage(0);
-  }, [rangeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  const total         = analytics?.total ?? 0;
+  const prevTotal     = analytics?.prev_total ?? 0;
+  const cameras       = analytics?.cameras_online ?? 0;
+  const peakHour      = analytics?.peak_hour ?? null;
+  const peakCount     = analytics?.peak_count ?? 0;
+  const hourlyTrend   = analytics?.hourly_trend ?? [];
+  const events        = analytics?.events ?? [];
 
-  const allEvents = walkinsData?.events ?? [];
+  const pctChange = prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : null;
 
-  const cameraOptions = useMemo(
-    () => [...new Set(allEvents.map((e) => e.camera_name))].sort(),
-    [allEvents]
-  );
-
-  // Camera + EventType filter client-side; date range is handled by the API call above
-  const filteredEvents = useMemo(() => {
-    return allEvents
-      .filter((evt) => {
-        if (dismissedIds.has(evt.id)) return false;
-        if (filterCamera !== "all" && evt.camera_name !== filterCamera) return false;
-        if (filterEventType === "walkin" && evt.dwell_seconds > 120) return false;
-        if (filterEventType === "waiting" && evt.dwell_seconds <= 120) return false;
-        return true;
-      })
-      .sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime());
-  }, [allEvents, filterCamera, filterEventType, dismissedIds]);
-
-  const mediaItems = useMemo(
-    () => filteredEvents.map((e) => ({ id: Number(e.id), snapshot_url: e.snapshot_url, face_crop_url: e.face_crop_url, video_url: e.video_url, label: e.camera_name })),
-    [filteredEvents]
-  );
-
-  // Remap hourly trend: redistribute counts from hours before 11 into hours 12–18
-  const remappedHourlyTrend = useMemo(() => {
-    const raw = walkinsData?.hourly_trend ?? [];
-    const buckets: Record<string, number> = {};
-    for (const entry of raw) {
-      const h = parseInt(entry.hour, 10);
-      if (h >= 11) {
-        buckets[entry.hour] = (buckets[entry.hour] ?? 0) + entry.walkins;
-      } else {
-        // deterministic target hour 12–18 based on source hour
-        const r = Math.abs(Math.sin(h * 9301 + 49297));
-        const targetH = 12 + Math.floor(r * 7); // 12..18
-        const label = `${String(targetH).padStart(2, "0")}:00`;
-        buckets[label] = (buckets[label] ?? 0) + entry.walkins;
-      }
-    }
-    return Object.entries(buckets).sort().map(([hour, walkins]) => ({ hour, walkins }));
-  }, [walkinsData]);
-
-  // Remap peak hour if it's before 11:00
-  const remappedPeakHour = useMemo(() => {
-    const ph = walkinsData?.peak_hour;
-    if (!ph) return ph;
-    const h = parseInt(ph, 10);
-    if (h >= 11) return ph;
-    const r = Math.abs(Math.sin(h * 233 + 7));
-    const targetH = 12 + Math.floor(r * 7);
-    return `${String(targetH).padStart(2, "0")}:00`;
-  }, [walkinsData]);
-
-  const pagedEvents = filteredEvents.slice(tablePage * WALKINS_PAGE_SIZE, (tablePage + 1) * WALKINS_PAGE_SIZE);
-
-  function resetFilters() {
-    setFilterFrom(today);
-    setFilterTo(today);
-    setFilterCamera("all");
-    setFilterEventType("all");
-    setTablePage(0);
-  }
-
-  function fmtWaitTime(s: number) {
-    if (s < 60) return `${s}s`;
-    const m = Math.floor(s / 60);
-    const r = s % 60;
+  const avgDwell = analytics?.avg_dwell_seconds ?? 0;
+  const fmtDwell = (s: number) => {
+    if (s === 0) return "—";
+    const m = Math.floor(s / 60), r = s % 60;
     return r > 0 ? `${m}m ${r}s` : `${m}m`;
-  }
+  };
 
-  function remapDwell(dwell: number, id: number | string): number {
-    if (dwell > 0) return dwell;
-    const seed = typeof id === "number" ? id : parseInt(String(id), 10) || 0;
-    // deterministic random 30–119 seconds
-    return 30 + Math.floor(Math.abs(Math.sin(seed * 7919 + 1013)) * 90);
-  }
+  const kpis = [
+    { icon: <DirectionsWalkOutlinedIcon />, label: "Total Walk-ins", value: total, sub: pctChange !== null ? `${pctChange > 0 ? "+" : ""}${pctChange}% vs prev period` : "No prior data" },
+    { icon: <TrendingUpOutlinedIcon />, label: "Peak Hour", value: peakHour ?? "—", sub: `${peakCount} walk-ins at peak` },
+    { icon: <AccessTimeOutlinedIcon />, label: "Avg Dwell Time", value: fmtDwell(avgDwell), sub: "Per person" },
+    { icon: <CameraAltOutlinedIcon />, label: "Cameras Active", value: cameras, sub: "Capturing walk-ins" },
+  ];
+
+  const maxCount = Math.max(...hourlyTrend.map(h => h.walkins), 1);
+
+  const mediaItems = useMemo(() => events.map((ev) => ({
+    id: ev.id, snapshot_url: ev.face_crop_url ?? ev.snapshot_url,
+    face_crop_url: ev.face_crop_url, video_url: null, label: ev.camera_name,
+  })), [events]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, width: "100%", pb: 3 }}>
 
-      {/* Header & Range Filter */}
+      {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1.5 }}>
         <Typography sx={{ fontSize: "1.25rem", fontWeight: 800, color: "#0B4964", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-          WALK-IN ANALYTICS
+          WALK-INS
         </Typography>
         <FormControl size="small">
           <Select
@@ -181,329 +96,104 @@ export function WalkinsAnalyticsPage() {
       </Box>
 
       {/* KPI Cards */}
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 1.5 }}>
-        {[
-          { label: "Walk-ins", value: walkinsData?.total ?? 0, delta: `${(walkinsData?.total ?? 0) - (walkinsData?.prev_total ?? 0) >= 0 ? "+" : ""}${(walkinsData?.total ?? 0) - (walkinsData?.prev_total ?? 0)}`, positive: (walkinsData?.total ?? 0) >= (walkinsData?.prev_total ?? 0), sub: "vs prev period", icon: <DirectionsWalkOutlinedIcon /> },
-          { label: "Peak Hour", value: remappedPeakHour ?? "—", delta: `${walkinsData?.peak_count ?? 0}`, positive: true, sub: "walk-ins at peak", icon: <TrendingUpOutlinedIcon /> },
-          (() => {
-            const avg  = walkinsData?.avg_dwell_seconds ?? 0;
-            const prev = walkinsData?.prev_avg_dwell_seconds ?? 0;
-            const diff = Math.round(avg - prev);
-            const sign = diff >= 0 ? "+" : "-";
-            const abs  = Math.abs(diff);
-            const toMin = (s: number) => {
-              if (s === 0) return "0m";
-              const m = Math.floor(s / 60), r = s % 60;
-              return r > 0 ? `${m}m ${r}s` : `${m}m`;
-            };
-            const diffStr = prev === 0 ? "" : (abs < 60 ? `${sign}${abs}s` : `${sign}${toMin(abs)}`);
-            const valStr  = !walkinsData ? "—" : toMin(avg);
-            return { label: "Avg Waiting Time", value: valStr, delta: diffStr, positive: diff <= 0, sub: prev > 0 ? "vs prev period" : "no prev data", icon: <AccessTimeOutlinedIcon /> };
-          })(),
-          { label: "Cameras Active", value: walkinsData?.cameras_online ?? 0, delta: "", positive: true, sub: "capturing walk-ins", icon: <PeopleOutlinedIcon /> },
-        ].map((kpi, idx) => (
-          <Paper key={idx} elevation={0} sx={{ p: 2, borderRadius: "14px", bgcolor: "#FFFFFF", border: "1px solid #DCE7E8", boxShadow: "0 1px 4px rgba(11,73,100,0.05)", display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Box sx={{ width: 42, height: 42, borderRadius: "10px", display: "grid", placeItems: "center", bgcolor: KPI_COLORS[idx]?.bg ?? "#EAF3F5", color: KPI_COLORS[idx]?.color ?? "#2E78A0", flexShrink: 0 }}>{kpi.icon}</Box>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontSize: "0.6875rem", fontWeight: 800, color: "#64748B", letterSpacing: "0.06em" }} noWrap>{kpi.label}</Typography>
-              <Typography sx={{ fontSize: "1.375rem", fontWeight: 800, color: "#1E2A35", lineHeight: 1.2 }}>{kpi.value}</Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, mt: 0.2 }}>
-                {kpi.delta && <Typography sx={{ fontSize: "0.6875rem", fontWeight: 700, color: kpi.positive ? "#5C9270" : "#C96B6B" }}>{kpi.delta}</Typography>}
-                <Typography sx={{ fontSize: "0.6875rem", color: "#94A3B8" }}>{kpi.sub}</Typography>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 2 }}>
+        {kpis.map((kpi, i) => (
+          <Paper key={kpi.label} elevation={0} sx={CARD_STYLE}>
+            <Box sx={{ p: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 1 }}>
+                <Box sx={{ width: 36, height: 36, borderRadius: "10px", bgcolor: KPI_COLORS[i].bg, display: "grid", placeItems: "center", color: KPI_COLORS[i].color, "& svg": { fontSize: 20 } }}>
+                  {kpi.icon}
+                </Box>
+                <Typography sx={{ fontSize: "0.75rem", color: ds.textSecondary, fontWeight: 600 }}>{kpi.label}</Typography>
               </Box>
+              <Typography sx={{ fontSize: "1.75rem", fontWeight: 800, color: ds.text, lineHeight: 1 }}>{kpi.value}</Typography>
+              <Typography sx={{ fontSize: "0.6875rem", color: ds.textMuted, mt: 0.5 }}>{kpi.sub}</Typography>
             </Box>
           </Paper>
         ))}
       </Box>
 
-      {/* Charts Row: Walk-ins Over Time + Walk-ins by Day */}
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.6fr 1fr" }, gap: 2.5 }}>
-        <Paper elevation={0} sx={{ p: 2.5, borderRadius: "14px", bgcolor: "#FFFFFF", border: "1px solid #DCE7E8", boxShadow: "0 1px 4px rgba(11,73,100,0.05)", display: "flex", flexDirection: "column", minHeight: 300 }}>
-          <Typography sx={{ fontSize: "0.8125rem", fontWeight: 800, color: "#64748B", letterSpacing: "0.08em", textTransform: "uppercase", mb: 2 }}>
-            WALK-INS OVER TIME
-          </Typography>
-          <Box sx={{ flex: 1, minHeight: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={remappedHourlyTrend} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="walkinsGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#5C9270" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#5C9270" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                <XAxis dataKey="hour" stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={{ stroke: "#DCE7E8" }} dy={6} />
-                <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} dx={-4} />
-                <Tooltip contentStyle={{ backgroundColor: "#1E2A35", borderRadius: 8, border: "none", color: "#FFFFFF", fontSize: 12 }} formatter={(val) => [`${val} Walk-ins`, "Walk-ins"]} />
-                <Area type="monotone" dataKey="walkins" stroke="#5C9270" strokeWidth={2.5} fillOpacity={1} fill="url(#walkinsGrad)" dot={{ r: 3, fill: "#5C9270" }} activeDot={{ r: 6 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </Box>
-        </Paper>
-
-        <Paper elevation={0} sx={{ p: 2.5, borderRadius: "14px", bgcolor: "#FFFFFF", border: "1px solid #DCE7E8", boxShadow: "0 1px 4px rgba(11,73,100,0.05)", display: "flex", flexDirection: "column", minHeight: 300 }}>
-          <Typography sx={{ fontSize: "0.8125rem", fontWeight: 800, color: "#64748B", letterSpacing: "0.08em", textTransform: "uppercase", mb: 2 }}>
-            WALK-INS BY DAY
-          </Typography>
-          <Box sx={{ flex: 1, minHeight: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={walkinsData?.by_day ?? []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                <XAxis dataKey="day" stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={{ stroke: "#DCE7E8" }} dy={6} />
-                <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} dx={-4} />
-                <Tooltip contentStyle={{ backgroundColor: "#1E2A35", borderRadius: 8, border: "none", color: "#FFFFFF", fontSize: 12 }} formatter={(val) => [`${val} Walk-ins`, "Walk-ins"]} />
-                <Bar dataKey="walkins" fill="#5C9270" radius={[4, 4, 0, 0]} barSize={28} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Box>
-        </Paper>
-      </Box>
-
-      {/* Events Filter Bar */}
-      <Paper elevation={0} sx={{ p: 2, borderRadius: "14px", bgcolor: "#FFFFFF", border: "1px solid #DCE7E8", boxShadow: "0 1px 4px rgba(11,73,100,0.05)" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-          <TextField
-            label="From"
-            type="date"
-            size="small"
-            value={filterFrom}
-            onChange={(e) => { setFilterFrom(e.target.value); setTablePage(0); }}
-            slotProps={{ inputLabel: { shrink: true } }}
-            sx={{ width: 165, "& .MuiOutlinedInput-root": { borderRadius: "10px" }, "& .MuiOutlinedInput-notchedOutline": { borderColor: "#DCE7E8" } }}
-          />
-          <TextField
-            label="To"
-            type="date"
-            size="small"
-            value={filterTo}
-            onChange={(e) => { setFilterTo(e.target.value); setTablePage(0); }}
-            slotProps={{ inputLabel: { shrink: true } }}
-            sx={{ width: 165, "& .MuiOutlinedInput-root": { borderRadius: "10px" }, "& .MuiOutlinedInput-notchedOutline": { borderColor: "#DCE7E8" } }}
-          />
-          <FormControl size="small" sx={{ minWidth: 170 }}>
-            <InputLabel sx={{ fontSize: "0.875rem" }}>Camera</InputLabel>
-            <Select
-              value={filterCamera}
-              label="Camera"
-              onChange={(e) => { setFilterCamera(e.target.value); setTablePage(0); }}
-              sx={{ borderRadius: "10px", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#DCE7E8" } }}
-            >
-              <MenuItem value="all">All Cameras</MenuItem>
-              {cameraOptions.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 190 }}>
-            <InputLabel sx={{ fontSize: "0.875rem" }}>Event Type</InputLabel>
-            <Select
-              value={filterEventType}
-              label="Event Type"
-              onChange={(e) => { setFilterEventType(e.target.value); setTablePage(0); }}
-              sx={{ borderRadius: "10px", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#DCE7E8" } }}
-            >
-              <MenuItem value="all">All Types</MenuItem>
-              <MenuItem value="walkin">Walk-in</MenuItem>
-              <MenuItem value="waiting">Customer Waiting Time</MenuItem>
-            </Select>
-          </FormControl>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={resetFilters}
-            sx={{ height: 40, borderColor: "#DCE7E8", color: "#64748B", fontWeight: 600, fontSize: "0.8125rem", borderRadius: "10px", textTransform: "none", px: 2, "&:hover": { borderColor: "#5C9270", color: "#5C9270", bgcolor: "#F0F8F4" } }}
-          >
-            Reset
-          </Button>
-        </Box>
-      </Paper>
-
-      {/* Walk-in Events Table / Grid */}
-      <Paper elevation={0} sx={CARD_STYLE}>
-        {/* Header */}
-        <Box sx={{ px: 2.5, pt: 2, pb: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Typography sx={{ fontSize: "0.8125rem", fontWeight: 800, color: "#64748B", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              WALK-IN EVENTS
+      {/* Hourly Trend Chart */}
+      <Paper elevation={0} sx={{ ...CARD_STYLE, p: 2.5 }}>
+        <Typography sx={{ fontSize: "0.6875rem", fontWeight: 700, color: ds.textSecondary, letterSpacing: "0.07em", textTransform: "uppercase", mb: 2 }}>
+          Walk-ins by Hour
+        </Typography>
+        {hourlyTrend.length > 0 ? (
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={hourlyTrend} margin={{ top: 4, right: 4, left: -28, bottom: 0 }} barSize={18}>
+              <CartesianGrid strokeDasharray="3 3" stroke={ds.borderSubtle} vertical={false} />
+              <XAxis dataKey="hour" fontSize={11} tickLine={false} axisLine={false} stroke={ds.textMuted} />
+              <YAxis fontSize={10} tickLine={false} axisLine={false} stroke={ds.textMuted} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ backgroundColor: ds.text, borderRadius: 8, border: "none", color: "#FFFFFF", fontSize: 12 }}
+                itemStyle={{ color: "#FFFFFF" }}
+                labelStyle={{ color: "#FFFFFF", fontWeight: 700, marginBottom: 4 }}
+                cursor={{ fill: `${ds.success}0D` }}
+                formatter={(v) => [v, "Walk-ins"]}
+              />
+              <Bar dataKey="walkins" radius={[4, 4, 0, 0]}>
+                {hourlyTrend.map((d, i) => (
+                  <Cell key={i} fill={d.walkins === maxCount ? "#5C9270" : "#5C927070"} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <Box sx={{ py: 4, textAlign: "center" }}>
+            <DirectionsWalkOutlinedIcon sx={{ fontSize: 36, color: ds.textMuted, opacity: 0.4 }} />
+            <Typography sx={{ fontSize: "0.875rem", color: ds.textMuted, mt: 1 }}>
+              No walk-in events for the selected range.
             </Typography>
-            {eventsLoading
-              ? <CircularProgress size={14} sx={{ color: "#5C9270" }} />
-              : <Typography sx={{ fontSize: "0.75rem", color: "#94A3B8" }}>{filteredEvents.length} events</Typography>
-            }
           </Box>
-          {/* View Toggle */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, bgcolor: "#F5F8F9", borderRadius: "10px", p: 0.4 }}>
-            <IconButton
-              size="small"
-              onClick={() => setViewMode("table")}
-              sx={{ borderRadius: "8px", color: viewMode === "table" ? "#0B4964" : "#94A3B8", bgcolor: viewMode === "table" ? "#FFFFFF" : "transparent", boxShadow: viewMode === "table" ? "0 1px 3px rgba(11,73,100,0.12)" : "none", transition: "all .15s" }}
-            >
-              <ViewListOutlinedIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={() => setViewMode("grid")}
-              sx={{ borderRadius: "8px", color: viewMode === "grid" ? "#0B4964" : "#94A3B8", bgcolor: viewMode === "grid" ? "#FFFFFF" : "transparent", boxShadow: viewMode === "grid" ? "0 1px 3px rgba(11,73,100,0.12)" : "none", transition: "all .15s" }}
-            >
-              <GridViewOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        </Box>
-
-        {/* Table View */}
-        {viewMode === "table" && (
-          <TableContainer sx={{ overflowX: "auto" }}>
-            <Table size="small" sx={{ minWidth: 720 }}>
-              <TableHead>
-                <TableRow>
-                  {["Capture", "Camera", "Location", "Detected At", "Waiting Time", "Event Type", "View"].map((col, i) => (
-                    <TableCell key={i} sx={{ fontSize: "0.6875rem", fontWeight: 700, color: "#94A3B8", letterSpacing: "0.07em", textTransform: "uppercase", bgcolor: "#F5F8F9", borderBottom: "2px solid #DCE7E8", py: 1.25, "&:first-of-type": { pl: 2.5 }, "&:last-of-type": { pr: 2.5, width: 48 } }}>
-                      {col}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {eventsLoading && (
-                  <TableRow><TableCell colSpan={7} sx={{ py: 5, textAlign: "center", border: 0 }}><CircularProgress size={24} sx={{ color: "#5C9270" }} /></TableCell></TableRow>
-                )}
-                {!eventsLoading && filteredEvents.length === 0 && (
-                  <TableRow><TableCell colSpan={7} sx={{ py: 5, textAlign: "center", border: 0 }}><Typography sx={{ color: "#94A3B8", fontSize: "0.875rem" }}>No walk-in events for this period.</Typography></TableCell></TableRow>
-                )}
-                {!eventsLoading && pagedEvents.map((evt, idx) => {
-                  const absIdx = tablePage * WALKINS_PAGE_SIZE + idx;
-                  const isWaiting = evt.dwell_seconds > 120;
-                  return (
-                    <TableRow key={evt.id} sx={{ bgcolor: idx % 2 === 0 ? "#FFFFFF" : "#FAFCFC", "&:hover": { bgcolor: "#F0F8F4" }, "& td": { borderBottom: "1px solid #EEF3F4" } }}>
-                      <TableCell sx={{ width: 100, pl: 2.5, py: 1 }}>
-                        {(evt.face_crop_url ?? evt.snapshot_url) ? (
-                          <Box component="button" onClick={() => { setMediaIdx(absIdx); setMediaOpen(true); }}
-                            sx={{ background: "none", border: "1px solid #DCE7E8", cursor: "pointer", p: 0, width: 90, height: 60, borderRadius: "6px", overflow: "hidden", display: "block", "&:hover": { borderColor: "#5C9270" } }}>
-                            <img src={evt.face_crop_url ?? evt.snapshot_url!} alt="capture" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                          </Box>
-                        ) : (
-                          <Box sx={{ width: 90, height: 60, bgcolor: "#F1F5F9", borderRadius: "6px", display: "grid", placeItems: "center" }}>
-                            <Typography sx={{ color: "#CBD5E1", fontSize: "0.75rem" }}>—</Typography>
-                          </Box>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: "0.8125rem", fontWeight: 700, color: "#1E293B" }}>{evt.camera_name}</Typography>
-                        <Typography sx={{ fontSize: "0.6875rem", color: "#64748B" }}>{evt.camera_key}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: "0.8125rem", color: "#1E293B" }}>{evt.location_name}</Typography>
-                      </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>
-                        <Typography sx={{ fontSize: "0.8125rem", color: "#1E293B" }}>
-                          {remapWalkinTime(evt.detected_at, evt.id).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: "#5C9270" }}>{fmtWaitTime(remapDwell(evt.dwell_seconds, evt.id))}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: "inline-flex", px: 1, py: 0.3, borderRadius: "20px", bgcolor: isWaiting ? "#FFF7ED" : "#E8F3EE", border: `1px solid ${isWaiting ? "#EA580C" : "#5C9270"}40` }}>
-                          <Typography sx={{ fontSize: "0.6875rem", fontWeight: 700, color: isWaiting ? "#EA580C" : "#5C9270", whiteSpace: "nowrap" }}>
-                            {isWaiting ? "Customer Waiting Time" : "Walk-in"}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ pr: 2.5 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => { setMediaIdx(absIdx); setMediaOpen(true); }}
-                          sx={{ color: "#94A3B8", "&:hover": { color: "#0B4964", bgcolor: "#EAF3F5" }, borderRadius: "8px" }}
-                        >
-                          <ImageOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        {/* Grid View */}
-        {viewMode === "grid" && (
-          <Box sx={{ p: 2 }}>
-            {eventsLoading && (
-              <Box sx={{ py: 5, display: "flex", justifyContent: "center" }}><CircularProgress size={28} sx={{ color: "#5C9270" }} /></Box>
-            )}
-            {!eventsLoading && filteredEvents.length === 0 && (
-              <Box sx={{ py: 5, textAlign: "center" }}><Typography sx={{ color: "#94A3B8", fontSize: "0.875rem" }}>No walk-in events for this period.</Typography></Box>
-            )}
-            {!eventsLoading && filteredEvents.length > 0 && (
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)", md: "repeat(4, 1fr)", lg: "repeat(5, 1fr)" }, gap: 1.5 }}>
-                {pagedEvents.map((evt, idx) => {
-                  const absIdx = tablePage * WALKINS_PAGE_SIZE + idx;
-                  const isWaiting = evt.dwell_seconds > 120;
-                  return (
-                    <Paper key={evt.id} elevation={0}
-                      onClick={() => { setMediaIdx(absIdx); setMediaOpen(true); }}
-                      sx={{ borderRadius: "12px", border: "1px solid #DCE7E8", overflow: "hidden", cursor: "pointer", transition: "box-shadow .15s", "&:hover": { boxShadow: "0 4px 16px rgba(11,73,100,0.12)", borderColor: "#5C9270" } }}
-                    >
-                      {/* Thumbnail */}
-                      <Box sx={{ width: "100%", paddingTop: "66%", position: "relative", bgcolor: "#F1F5F9" }}>
-                        {(evt.face_crop_url ?? evt.snapshot_url) ? (
-                          <img src={evt.face_crop_url ?? evt.snapshot_url!} alt="capture" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                        ) : (
-                          <Box sx={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-                            <ImageOutlinedIcon sx={{ color: "#CBD5E1", fontSize: 32 }} />
-                          </Box>
-                        )}
-                      </Box>
-                      {/* Info */}
-                      <Box sx={{ p: 1.25 }}>
-                        <Typography sx={{ fontSize: "0.8125rem", fontWeight: 700, color: "#1E293B" }} noWrap>{evt.camera_name}</Typography>
-                        <Typography sx={{ fontSize: "0.6875rem", color: "#64748B", mb: 0.75 }} noWrap>{evt.location_name}</Typography>
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
-                          <Typography sx={{ fontSize: "0.6875rem", color: "#94A3B8" }}>
-                            {remapWalkinTime(evt.detected_at, evt.id).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })}
-                          </Typography>
-                          <Box sx={{ px: 0.75, py: 0.2, borderRadius: "20px", bgcolor: isWaiting ? "#FFF7ED" : "#E8F3EE", border: `1px solid ${isWaiting ? "#EA580C" : "#5C9270"}40`, flexShrink: 0 }}>
-                            <Typography sx={{ fontSize: "0.625rem", fontWeight: 700, color: isWaiting ? "#EA580C" : "#5C9270" }}>
-                              {isWaiting ? "Waiting" : "Walk-in"}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        <Typography sx={{ fontSize: "0.6875rem", color: "#5C9270", fontWeight: 600, mt: 0.5 }}>{fmtWaitTime(remapDwell(evt.dwell_seconds, evt.id))}</Typography>
-                      </Box>
-                    </Paper>
-                  );
-                })}
-              </Box>
-            )}
-          </Box>
-        )}
-
-        {filteredEvents.length > WALKINS_PAGE_SIZE && (
-          <TablePagination
-            component="div"
-            count={filteredEvents.length}
-            page={tablePage}
-            onPageChange={(_e, p) => setTablePage(p)}
-            rowsPerPage={WALKINS_PAGE_SIZE}
-            rowsPerPageOptions={[WALKINS_PAGE_SIZE]}
-            sx={{ borderTop: "1px solid #DCE7E8", fontSize: "0.75rem", color: "#64748B" }}
-          />
-        )}
-
-        {mediaOpen && mediaItems.length > 0 && (
-          <MediaDialog
-            open={mediaOpen}
-            onClose={() => setMediaOpen(false)}
-            snapshot_url={mediaItems[mediaIdx]?.snapshot_url ?? null}
-            video_url={mediaItems[mediaIdx]?.video_url ?? null}
-            label={mediaItems[mediaIdx]?.label}
-            items={mediaItems}
-            initialIndex={mediaIdx}
-            module="walkins"
-            onFalsePositive={(id) => setDismissedIds((prev) => new Set([...prev, id]))}
-          />
         )}
       </Paper>
 
+      {/* Events Grid */}
+      {events.length > 0 && (
+        <Box>
+          <Typography sx={{ fontSize: "0.875rem", fontWeight: 700, color: ds.text, mb: 1.5 }}>
+            Events ({events.length})
+          </Typography>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 2 }}>
+            {events.map((ev, i) => (
+              <Paper key={ev.id} elevation={0} onClick={() => { setMediaIdx(i); setMediaOpen(true); }}
+                sx={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #5C927044", boxShadow: "0 1px 4px rgba(11,73,100,0.06)", cursor: "pointer", transition: "box-shadow 0.15s", "&:hover": { boxShadow: "0 4px 16px rgba(92,146,112,0.18)" } }}>
+                <Box sx={{ position: "relative", width: "100%", aspectRatio: "16/9", bgcolor: "#0B2A3A", overflow: "hidden" }}>
+                  {(ev.face_crop_url ?? ev.snapshot_url) ? (
+                    <Box component="img" src={ev.face_crop_url ?? ev.snapshot_url!} alt={ev.camera_name}
+                      sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  ) : (
+                    <Box sx={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "2rem" }}>🚶</Typography>
+                    </Box>
+                  )}
+                  <Box sx={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, bgcolor: "#5C9270" }} />
+                  <Box sx={{ position: "absolute", top: 6, left: 6 }}>
+                    <Chip label={`${ev.person_count} detected`} size="small"
+                      sx={{ bgcolor: "rgba(0,0,0,0.6)", color: "#fff", fontSize: "0.625rem", fontWeight: 700, height: 20, "& .MuiChip-label": { px: 0.75 } }} />
+                  </Box>
+                </Box>
+                <Box sx={{ p: 1.25 }}>
+                  <Typography sx={{ fontSize: "0.8125rem", fontWeight: 700, color: ds.text }} noWrap>{ev.camera_name}</Typography>
+                  <Typography sx={{ fontSize: "0.6875rem", color: ds.textMuted }} noWrap>{ev.location_name}</Typography>
+                  <Typography sx={{ fontSize: "0.6875rem", color: ds.textSecondary, mt: 0.25 }}>
+                    {new Date(ev.detected_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </Typography>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+        </Box>
+      )}
+
+      {mediaOpen && mediaItems.length > 0 && (
+        <MediaDialog open={mediaOpen} onClose={() => setMediaOpen(false)}
+          snapshot_url={mediaItems[mediaIdx]?.snapshot_url ?? null}
+          face_crop_url={mediaItems[mediaIdx]?.face_crop_url ?? null}
+          video_url={null}
+          label={mediaItems[mediaIdx]?.label} items={mediaItems} initialIndex={mediaIdx}
+          module="walkins" />
+      )}
     </Box>
   );
 }

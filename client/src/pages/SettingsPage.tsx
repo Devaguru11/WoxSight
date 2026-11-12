@@ -9,8 +9,8 @@ import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import DirectionsWalkOutlinedIcon from "@mui/icons-material/DirectionsWalkOutlined";
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import NightsStayOutlinedIcon from "@mui/icons-material/NightsStayOutlined";
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
@@ -58,49 +58,48 @@ const SECTIONS: { scope: Scope; title: string; blurb: string; icon: React.ReactN
   {
     scope: "walkins",
     title: "Walk-ins Detection",
-    blurb: "Customer arrival detection at wellness centre entrances.",
+    blurb: "Visitor arrival detection at entry points and reception.",
     icon: <DirectionsWalkOutlinedIcon sx={{ fontSize: 18, color: pnp.success }} />,
     half: true,
     fields: [
-      { k: "enabled",          label: "Module enabled",                         type: "bool" },
-      { k: "confidence",       label: "Detection confidence",                   type: "number", min: 0, max: 1, step: 0.05 },
-      { k: "minPersonSize",    label: "Minimum person size (px)",               type: "number", min: 1, max: 5000 },
-      { k: "cooldownSeconds",  label: "Cooldown between detections (s)",        type: "number", min: 0, max: 3600 },
+      { k: "enabled",          label: "Module enabled",                          type: "bool" },
+      { k: "confidence",       label: "Detection confidence",                    type: "number", min: 0, max: 1, step: 0.05 },
+      { k: "minPersonSize",    label: "Minimum person size (px)",                type: "number", min: 1, max: 5000 },
+      { k: "cooldownSeconds",  label: "Cooldown between detections (s)",         type: "number", min: 0, max: 3600 },
       { k: "surgeThreshold",   label: "Surge alert threshold (persons / 5 min)", type: "number", min: 5, max: 100,
         help: "Raise an alert when this many walk-ins occur within 5 minutes." },
     ],
   },
   {
-    scope: "waiting_time",
-    title: "Customer Waiting Time",
-    blurb: "SLA thresholds for queue and wait-time monitoring.",
-    icon: <AccessTimeOutlinedIcon sx={{ fontSize: 18, color: pnp.blue }} />,
+    scope: "crowd_gathering",
+    title: "Crowd Gathering",
+    blurb: "Detect and alert when crowd density exceeds safe thresholds in monitored zones.",
+    icon: <GroupsOutlinedIcon sx={{ fontSize: 18, color: "#D97706" }} />,
     half: true,
     fields: [
-      { k: "enabled",                   label: "Module enabled",                   type: "bool" },
-      { k: "warningThresholdMinutes",    label: "Warning threshold (minutes)",       type: "number", min: 1, max: 120,
-        help: "Raise a warning alert when a customer waits this long." },
-      { k: "criticalThresholdMinutes",   label: "Critical threshold (minutes)",      type: "number", min: 1, max: 120,
-        help: "Escalate to critical at this wait duration." },
-      { k: "maxQueueLength",             label: "Max queue length (persons)",        type: "number", min: 1, max: 100,
-        help: "Alert when the queue exceeds this many people." },
-      { k: "cooldownSeconds",            label: "Alert cooldown (s)",               type: "number", min: 0, max: 3600 },
+      { k: "enabled",             label: "Module enabled",                       type: "bool" },
+      { k: "confidence",          label: "Detection confidence",                 type: "number", min: 0, max: 1, step: 0.05 },
+      { k: "personThreshold",     label: "Person count threshold",               type: "number", min: 2, max: 200,
+        help: "Trigger an alert when this many people are detected in a zone." },
+      { k: "durationSeconds",     label: "Minimum gathering duration (s)",       type: "number", min: 5, max: 600,
+        help: "Only alert if the crowd persists for at least this many seconds." },
+      { k: "cooldownSeconds",     label: "Alert cooldown (s)",                   type: "number", min: 0, max: 3600 },
     ],
   },
   {
-    scope: "staff_unavailability",
-    title: "Staff Unavailability",
-    blurb: "Unattended station and therapist break-time monitoring.",
-    icon: <PersonOutlineOutlinedIcon sx={{ fontSize: 18, color: pnp.warning }} />,
+    scope: "after_hours",
+    title: "After Hours",
+    blurb: "Flag unauthorised presence detected outside of permitted operating hours.",
+    icon: <NightsStayOutlinedIcon sx={{ fontSize: 18, color: "#7C3AED" }} />,
     half: true,
     fields: [
-      { k: "enabled",                label: "Module enabled",                      type: "bool" },
-      { k: "maxUnattendedSeconds",   label: "Max unattended duration (s)",          type: "number", min: 10, max: 7200,
-        help: "Alert when a station has been unmanned longer than this." },
-      { k: "breakOverrunMinutes",    label: "Break overrun threshold (minutes)",    type: "number", min: 1,  max: 60,
-        help: "Alert when a staff break exceeds this duration." },
-      { k: "alertCooldownSeconds",   label: "Alert cooldown (s)",                  type: "number", min: 0,  max: 7200 },
-      { k: "confidence",             label: "Detection confidence",                 type: "number", min: 0,  max: 1,  step: 0.05 },
+      { k: "enabled",             label: "Module enabled",                       type: "bool" },
+      { k: "operatingHoursStart", label: "Operating hours start (HH:MM)",        type: "text",
+        help: "Detections before this time are treated as after-hours." },
+      { k: "operatingHoursEnd",   label: "Operating hours end (HH:MM)",          type: "text",
+        help: "Detections after this time trigger an after-hours alert." },
+      { k: "confidence",          label: "Detection confidence",                 type: "number", min: 0, max: 1, step: 0.05 },
+      { k: "cooldownSeconds",     label: "Alert cooldown (s)",                   type: "number", min: 0, max: 3600 },
     ],
   },
   {

@@ -16,17 +16,17 @@ export function IntegrationsPage() {
       enabled: true,
     },
     {
-      title: "Wellness POS & Booking Engine",
+      title: "Campus ERP & Attendance System",
       category: "Appointment Sync",
-      desc: "Synchronizes walk-in queue and booked appointments to detect service delays automatically.",
+      desc: "Synchronises walk-in queue and campus scheduling data to detect service delays automatically.",
       status: "Active",
       icon: <HubOutlinedIcon sx={{ fontSize: 24, color: "#0284C7" }} />,
       enabled: true,
     },
     {
-      title: "AccessGenie CV Edge Inference",
+      title: "WoxSight CV Edge Inference",
       category: "AI Analytics Engine",
-      desc: "Real-time tripwire detection, customer dwell time calculation, and staff seat coverage tracking.",
+      desc: "Real-time tripwire detection, visitor dwell time calculation, and staff coverage tracking.",
       status: "Operational · 12ms Latency",
       icon: <StorageOutlinedIcon sx={{ fontSize: 24, color: "#10B981" }} />,
       enabled: true,
@@ -34,7 +34,7 @@ export function IntegrationsPage() {
     {
       title: "SMS & WhatsApp Dispatcher",
       category: "Alert Notification",
-      desc: "Instant notifications sent to spa managers when waiting times exceed the 20-minute threshold.",
+      desc: "Instant notifications sent to campus security when waiting times or crowd thresholds are exceeded.",
       status: "Configured",
       icon: <NotificationsActiveOutlinedIcon sx={{ fontSize: 24, color: "#F97316" }} />,
       enabled: true,
@@ -59,7 +59,7 @@ export function IntegrationsPage() {
             Integrations & Connected Systems
           </Typography>
           <Typography sx={{ fontSize: "0.8125rem", color: "#64748B", mt: 0.25 }}>
-            Manage connected cameras, inference models, and wellness alerting webhooks
+            Manage connected cameras, inference models, and campus alerting webhooks
           </Typography>
         </Box>
 

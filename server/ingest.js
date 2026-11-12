@@ -97,7 +97,7 @@ async function ingestMeetGreet(filterDate) {
 
     let inserted = 0, skipped = 0;
     for (const ev of events) {
-      const cameraKey = ev.camera_id || "Banjara Hills";
+      const cameraKey = ev.camera_id || "Woxsen";
       const camera_id = await resolveCameraId(cameraKey);
       if (!camera_id) { console.warn(`  ✗ camera '${cameraKey}' not found`); skipped++; continue; }
 

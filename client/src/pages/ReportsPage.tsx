@@ -76,7 +76,7 @@ const SCHEDULED = [
 
 // ── main component ────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "meghavi_report_history";
+const STORAGE_KEY = "woxsight_report_history";
 
 function loadHistory(): GeneratedReport[] {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); } catch { return []; }
@@ -135,7 +135,7 @@ export function ReportsPage() {
       switch (type) {
         case "daily":
           from = today; to = today;
-          title = "Daily Wellness Operations Summary";
+          title = "Daily Campus Operations Summary";
           break;
         case "weekly":
           from = sevenDaysAgoIST(); to = today;
@@ -143,7 +143,7 @@ export function ReportsPage() {
           break;
         case "monthly":
           from = firstOfMonth(); to = today;
-          title = "Monthly Executive Wellness Briefing";
+          title = "Monthly Executive Campus Briefing";
           break;
         case "custom":
           from  = opts!.from; to = opts!.to;

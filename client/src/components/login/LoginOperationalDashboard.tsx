@@ -12,33 +12,33 @@ import { loginPalette } from "./loginTheme";
 const MODULES = [
   {
     icon: <DirectionsWalkOutlinedIcon />,
-    title: "Walk-ins",
-    body: "Track customer arrivals and peak lobby footfall patterns.",
+    title: "Campus Footfall",
+    body: "Track visitor arrivals and peak footfall patterns across entry points.",
   },
   {
     icon: <TimerOutlinedIcon />,
-    title: "Customer Waiting Time",
-    body: "Monitor dwell and queue duration across reception and therapy suites.",
+    title: "Visitor Waiting Time",
+    body: "Monitor dwell and queue duration at reception and key service desks.",
   },
   {
     icon: <FaceRetouchingNaturalOutlinedIcon />,
-    title: "Staff Unavailability",
-    body: "Real-time visibility into therapist and consultant station coverage.",
+    title: "Staff & Faculty Presence",
+    body: "Real-time visibility into staff coverage across campus zones.",
   },
   {
     icon: <VideocamRoundedIcon />,
     title: "Cameras Online",
-    body: "Live video surveillance feeds across wellness reception zones.",
+    body: "Live video surveillance feeds across campus entry points and facilities.",
   },
   {
     icon: <NotificationsNoneOutlinedIcon />,
     title: "Active Alerts",
-    body: "Instant notifications for excessive wait times and staff shortages.",
+    body: "Instant notifications for crowd surges, staff shortages, and security events.",
   },
   {
     icon: <SmartToyOutlinedIcon />,
     title: "AI Daily Briefing",
-    body: "A written summary of the day with actionable operational recommendations.",
+    body: "A written summary of the day with actionable campus operations recommendations.",
   },
 ];
 
@@ -153,8 +153,8 @@ export function LoginOperationalDashboard() {
           }}
         >
           <img
-            src={`${import.meta.env.BASE_URL}meghavi.png`}
-            alt="Meghavi Wellness"
+            src={`${import.meta.env.BASE_URL}brand/woxsen-logo.png`}
+            alt="Woxsen University"
             style={{ height: 52, width: "auto" }}
           />
         </Box>
@@ -162,7 +162,7 @@ export function LoginOperationalDashboard() {
         {/* Hero headline */}
         <Typography
           sx={{
-            fontFamily: '"DM Sans", "Inter", sans-serif',
+            fontFamily: '"Poppins", "Inter", sans-serif',
             fontSize: "2.75rem",
             fontWeight: 800,
             color: loginPalette.headlineWhite,
@@ -175,12 +175,12 @@ export function LoginOperationalDashboard() {
             component="span"
             sx={{ color: loginPalette.headlineAccent }}
           >
-            Wellness
+            Campus
           </Box>{" "}
           Analytics
         </Typography>
         <Typography sx={{ fontSize: "1rem", color: loginPalette.featureBody, mb: 4, lineHeight: 1.6, maxWidth: 420 }}>
-          {SITE_BRANDING.loginHeroBody ?? "Real-time AI-powered insights for smarter wellness center management."}
+          {SITE_BRANDING.loginHeroBody ?? "Live AI-powered video surveillance across campus entry points, reception zones and key facilities."}
         </Typography>
 
         {/* Feature list */}
@@ -208,8 +208,8 @@ export function LoginOperationalDashboard() {
       {/* Bottom partner logo */}
       <Box sx={{ position: "relative", zIndex: 1, mt: 4 }}>
         <img
-          src={`${import.meta.env.BASE_URL}AccessGenieLogo.svg`}
-          alt="AccessGenie"
+          src={`${import.meta.env.BASE_URL}brand/woxsen-logo.png`}
+          alt="Woxsen University"
           style={{ height: 40, width: "auto", display: "block" }}
         />
       </Box>

@@ -161,9 +161,9 @@ export function AppMasthead({ pageTitle, pageSubtitle, userEmail, userName, onSi
         {/* Partner logo */}
         <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}>
           <img
-            src={`${import.meta.env.BASE_URL}AccessGenieLogo.svg`}
-            alt="AccessGenie"
-            style={{ height: 22, width: "auto" }}
+            src={`${import.meta.env.BASE_URL}brand/woxsen-logo.png`}
+            alt="Woxsen University"
+            style={{ height: 28, width: "auto" }}
           />
         </Box>
 

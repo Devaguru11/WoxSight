@@ -7,6 +7,16 @@ import FullscreenRoundedIcon from "@mui/icons-material/FullscreenRounded";
 import VideocamOffOutlinedIcon from "@mui/icons-material/VideocamOffOutlined";
 import { useMeghaviCameras, type MeghaviCamera } from "../../../lib/meghaviApi";
 import { ds } from "../../../lib/dsTokens";
+import { LiveStreamPlayer } from "../../LiveStreamPlayer";
+
+function isHlsUrl(url: string | null): boolean {
+  return !!url && url.endsWith(".m3u8");
+}
+
+function hlsStreamId(url: string): string {
+  const m = url.match(/\/streams\/([^/]+)\/hls\//);
+  return m ? m[1] : url;
+}
 
 const PER_PAGE = 4;
 const AUTO_INTERVAL_MS = 30_000;
@@ -30,7 +40,9 @@ function CameraCell({ cam, onExpand }: { cam: MeghaviCamera; onExpand: (c: Megha
       onClick={() => onExpand(cam)}
     >
       {cam.stream_url ? (
-        <img src={cam.stream_url} alt={cam.display_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} width={1280} height={960} />
+        isHlsUrl(cam.stream_url)
+          ? <LiveStreamPlayer streamId={hlsStreamId(cam.stream_url)} />
+          : <img src={cam.stream_url} alt={cam.display_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} width={1280} height={960} />
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5, opacity: 0.35 }}>
           <VideocamOffOutlinedIcon sx={{ fontSize: 28, color: "#FFFFFF" }} />
@@ -86,19 +98,13 @@ function CameraCell({ cam, onExpand }: { cam: MeghaviCamera; onExpand: (c: Megha
   );
 }
 
-const STATIC_CAMERAS: MeghaviCamera[] = [
-  { id: 101, camera_key: "stat-1", display_name: "Gachibowli",          location_name: "Gachibowli",   status: "active", stream_url: "/Streams_static/Gachibowli.jpeg",            location_id: 1, area: "Entrance" },
-  { id: 102, camera_key: "stat-2", display_name: "Banjara Hills (Outside)", location_name: "Banjara Hills", status: "active", stream_url: "/Streams_static/Jublee Hills (Outside).jpeg", location_id: 2, area: "Outside" },
-  { id: 104, camera_key: "stat-4", display_name: "Banjara Hills",         location_name: "Banjara Hills", status: "active", stream_url: "/Streams_static/Jublee Hills.jpeg",            location_id: 2, area: "General" },
-];
-
 export function MeghaviLiveOverview() {
   const { cameras: apiCameras, loading } = useMeghaviCameras();
   const [page, setPage] = useState(0);
   const [fullscreenCam, setFullscreenCam] = useState<MeghaviCamera | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const displayCameras = apiCameras.length > 0 && apiCameras.some(c => c.stream_url) ? apiCameras : STATIC_CAMERAS;
+  const displayCameras = apiCameras;
   const totalPages = Math.max(1, Math.ceil(displayCameras.length / PER_PAGE));
 
   const startTimer = useCallback(() => {
@@ -199,7 +205,9 @@ export function MeghaviLiveOverview() {
           {fullscreenCam && (
             <Box sx={{ position: "relative" }}>
               {fullscreenCam.stream_url ? (
-                <img src={fullscreenCam.stream_url} alt={fullscreenCam.display_name} style={{ width: "100%", display: "block" }} width={1280} height={960} />
+                isHlsUrl(fullscreenCam.stream_url)
+                  ? <Box sx={{ aspectRatio: "16/9", width: "100%", bgcolor: "#000" }}><LiveStreamPlayer streamId={hlsStreamId(fullscreenCam.stream_url)} /></Box>
+                  : <img src={fullscreenCam.stream_url} alt={fullscreenCam.display_name} style={{ width: "100%", display: "block" }} width={1280} height={960} />
               ) : (
                 <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
                   <VideocamOffOutlinedIcon sx={{ fontSize: 52, color: "rgba(255,255,255,0.25)" }} />

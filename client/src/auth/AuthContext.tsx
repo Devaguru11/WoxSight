@@ -33,9 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     if (at.startsWith("mock-demo-")) {
-      const savedEmail = localStorage.getItem("meghavi-user-email") || "devaguru.in@bluecloudsoftech.com";
-      const savedName  = localStorage.getItem("meghavi-user-name")  || "Deva";
-      const savedRole  = localStorage.getItem("meghavi-user-role")  || "admin";
+      const savedEmail = localStorage.getItem("woxsight-user-email") || "admin@woxsen.edu.in";
+      const savedName  = localStorage.getItem("woxsight-user-name")  || "Deva";
+      const savedRole  = localStorage.getItem("woxsight-user-role")  || "admin";
       setUser({
         id: 1,
         email: savedEmail,
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setUser({
         id: 1,
-        email: "devaguru.in@bluecloudsoftech.com",
+        email: "admin@woxsen.edu.in",
         name: "Deva",
         role: "admin",
         mustChangePassword: false,
@@ -77,9 +77,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
     } catch {
       // Mock / standalone demo login fallback
-      const cleanEmail = email.trim() || "devaguru.in@bluecloudsoftech.com";
+      const cleanEmail = email.trim() || "admin@woxsen.edu.in";
       const role = cleanEmail.includes("viewer") ? "viewer" : cleanEmail.includes("manager") ? "manager" : "admin";
-      const displayName = cleanEmail === "devaguru.in@bluecloudsoftech.com" ? "Deva" : undefined;
+      const displayName = cleanEmail === "admin@woxsen.edu.in" ? "Deva" : undefined;
       const demoUser: AuthUser = {
         id: 1,
         email: cleanEmail,
@@ -87,9 +87,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role,
         mustChangePassword: false,
       };
-      localStorage.setItem("meghavi-user-email", cleanEmail);
-      localStorage.setItem("meghavi-user-role", role);
-      if (displayName) localStorage.setItem("meghavi-user-name", displayName);
+      localStorage.setItem("woxsight-user-email", cleanEmail);
+      localStorage.setItem("woxsight-user-role", role);
+      if (displayName) localStorage.setItem("woxsight-user-name", displayName);
       setTokens("mock-demo-access-token", "mock-demo-refresh-token");
       setUser(demoUser);
     }
@@ -99,8 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Fire-and-forget — record logout in audit trail, don't block the client
     api.post("/auth/logout").catch(() => {});
     clearTokens();
-    localStorage.removeItem("meghavi-user-email");
-    localStorage.removeItem("meghavi-user-role");
+    localStorage.removeItem("woxsight-user-email");
+    localStorage.removeItem("woxsight-user-role");
     setUser(null);
   }, []);
 

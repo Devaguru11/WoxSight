@@ -4,12 +4,12 @@ import type { DashboardSummary, WalkinsAnalytics, StaffAvailabilityAnalytics, Me
 
 type Doc = jsPDF & { lastAutoTable?: { finalY: number } };
 
-const TEAL:   [number, number, number] = [10,  77,  82];
-const TEAL_L: [number, number, number] = [224, 240, 241];
-const INK:    [number, number, number] = [30,  42,  53];
-const MUTED:  [number, number, number] = [100, 116, 139];
+const TEAL:   [number, number, number] = [238,  72,  96];  // coral primary
+const TEAL_L: [number, number, number] = [253, 232, 235];  // coral light
+const INK:    [number, number, number] = [65,   64,  66];  // charcoal
+const MUTED:  [number, number, number] = [107, 107, 110];
 const WHITE:  [number, number, number] = [255, 255, 255];
-const RULE:   [number, number, number] = [226, 236, 233];
+const RULE:   [number, number, number] = [228, 228, 230];
 
 const M = 14;          // page margin
 const W = 210 - M * 2; // content width
@@ -45,10 +45,10 @@ function header(doc: Doc, title: string, subtitle: string) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...WHITE);
-  doc.text("Meghavi Wellness", M, 10);
+  doc.text("WoxSight", M, 10);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text("Operational Intelligence Platform", M, 15.5);
+  doc.text("Woxsen University — Campus Video Analytics", M, 15.5);
   // right side: title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
@@ -65,7 +65,7 @@ function footer(doc: Doc, pageNum: number, total: number) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(...WHITE);
-  doc.text("Confidential — Meghavi Wellness Monitoring System", M, 293.5);
+  doc.text("Confidential — WoxSight Campus Video Analytics | Woxsen University", M, 293.5);
   doc.text(`Page ${pageNum} of ${total}`, 210 - M, 293.5, { align: "right" });
 }
 
@@ -139,7 +139,7 @@ export function generateOperationalPdf(data: ReportData): void {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(...TEAL);
-  doc.text("Meghavi Wellness", 105, 85, { align: "center" });
+  doc.text("WoxSight — Woxsen University", 105, 85, { align: "center" });
 
   doc.setFontSize(11);
   doc.setTextColor(...INK);
@@ -162,7 +162,7 @@ export function generateOperationalPdf(data: ReportData): void {
   doc.setFontSize(8);
   doc.setTextColor(...MUTED);
   doc.text(`Generated: ${generated}`, 105, 134, { align: "center" });
-  doc.text("Gachibowli & Banjara Hills Centres", 105, 141, { align: "center" });
+  doc.text("Woxsen Centre", 105, 141, { align: "center" });
 
   // ── Summary page ────────────────────────────────────────────────────────────
   doc.addPage();

@@ -11,7 +11,7 @@
 -- ---------------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------------
--- Locations — Gachibowli Complex & Banjara Hills Villa
+-- Locations — Woxsen & Woxsen
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS meghavi_locations (
   id         SERIAL       PRIMARY KEY,
@@ -120,30 +120,30 @@ CREATE INDEX IF NOT EXISTS idx_msae_cam_ts    ON meghavi_staff_availability_even
 -- ---------------------------------------------------------------------------
 
 INSERT INTO meghavi_locations (name, city) VALUES
-  ('Gachibowli Complex', 'Hyderabad'),
-  ('Banjara Hills Villa', 'Hyderabad')
+  ('Woxsen', 'Hyderabad'),
+  ('Woxsen', 'Hyderabad')
 ON CONFLICT DO NOTHING;
 
 -- Gachibowli: 1 reception camera (POC)
 INSERT INTO meghavi_cameras (camera_key, location_id, display_name, area)
 SELECT 'cam-gachi-reception-01', id, 'Reception — Gachibowli', 'Reception'
-FROM   meghavi_locations WHERE name = 'Gachibowli Complex'
+FROM   meghavi_locations WHERE name = 'Woxsen'
 ON CONFLICT (camera_key) DO NOTHING;
 
--- Banjara Hills: 2 reception cameras + 1 waiting area camera (per MoM)
+-- Woxsen: 2 reception cameras + 1 waiting area camera (per MoM)
 INSERT INTO meghavi_cameras (camera_key, location_id, display_name, area)
-SELECT 'cam-bh-reception-01', id, 'Reception A — Banjara Hills', 'Reception'
-FROM   meghavi_locations WHERE name = 'Banjara Hills Villa'
-ON CONFLICT (camera_key) DO NOTHING;
-
-INSERT INTO meghavi_cameras (camera_key, location_id, display_name, area)
-SELECT 'cam-bh-reception-02', id, 'Reception B — Banjara Hills', 'Reception'
-FROM   meghavi_locations WHERE name = 'Banjara Hills Villa'
+SELECT 'cam-bh-reception-01', id, 'Reception A — Woxsen', 'Reception'
+FROM   meghavi_locations WHERE name = 'Woxsen'
 ON CONFLICT (camera_key) DO NOTHING;
 
 INSERT INTO meghavi_cameras (camera_key, location_id, display_name, area)
-SELECT 'cam-bh-waiting-01', id, 'Waiting Area — Banjara Hills', 'Waiting Area'
-FROM   meghavi_locations WHERE name = 'Banjara Hills Villa'
+SELECT 'cam-bh-reception-02', id, 'Reception B — Woxsen', 'Reception'
+FROM   meghavi_locations WHERE name = 'Woxsen'
+ON CONFLICT (camera_key) DO NOTHING;
+
+INSERT INTO meghavi_cameras (camera_key, location_id, display_name, area)
+SELECT 'cam-bh-waiting-01', id, 'Waiting Area — Woxsen', 'Waiting Area'
+FROM   meghavi_locations WHERE name = 'Woxsen'
 ON CONFLICT (camera_key) DO NOTHING;
 
 -- Enable all three modules on all cameras

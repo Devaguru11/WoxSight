@@ -91,12 +91,12 @@ export const theme = createTheme({
         },
         contained: {
           "&.MuiButton-containedPrimary": {
-            boxShadow: `0 1px 2px rgba(37,99,235,0.25)`,
-            "&:hover": { boxShadow: `0 6px 16px -4px rgba(37,99,235,0.35)` },
+            boxShadow: `0 1px 2px rgba(238,72,96,0.25)`,
+            "&:hover": { boxShadow: `0 6px 16px -4px rgba(238,72,96,0.35)` },
           },
           "&.MuiButton-containedSecondary": {
-            boxShadow: `0 1px 2px rgba(249,115,22,0.25)`,
-            "&:hover": { boxShadow: `0 6px 16px -4px rgba(249,115,22,0.35)` },
+            boxShadow: `0 1px 2px rgba(65,64,66,0.25)`,
+            "&:hover": { boxShadow: `0 6px 16px -4px rgba(65,64,66,0.35)` },
           },
         },
         outlined: {

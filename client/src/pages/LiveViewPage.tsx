@@ -7,6 +7,17 @@ import FullscreenRoundedIcon from "@mui/icons-material/FullscreenRounded";
 import VideocamOffOutlinedIcon from "@mui/icons-material/VideocamOffOutlined";
 import { useMeghaviCameras, type MeghaviCamera } from "../lib/meghaviApi";
 import { ds } from "../lib/dsTokens";
+import { LiveStreamPlayer } from "../components/LiveStreamPlayer";
+
+function isHlsUrl(url: string | null): boolean {
+  return !!url && url.endsWith(".m3u8");
+}
+
+function hlsStreamId(url: string): string {
+  // extract ID from /api/streams/<id>/hls/index.m3u8
+  const m = url.match(/\/streams\/([^/]+)\/hls\//);
+  return m ? m[1] : url;
+}
 
 const PER_PAGE = 4;
 const AUTO_INTERVAL_MS = 30_000;
@@ -32,7 +43,9 @@ function CameraCell({ cam, onExpand }: { cam: MeghaviCamera; onExpand: (c: Megha
       }}
     >
       {cam.stream_url ? (
-        <img src={cam.stream_url} alt={cam.display_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} width={1280} height={960} />
+        isHlsUrl(cam.stream_url)
+          ? <LiveStreamPlayer streamId={hlsStreamId(cam.stream_url)} />
+          : <img src={cam.stream_url} alt={cam.display_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} width={1280} height={960} />
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5, opacity: 0.3 }}>
           <VideocamOffOutlinedIcon sx={{ fontSize: 32, color: "#FFFFFF" }} />
@@ -225,7 +238,9 @@ export function LiveViewPage() {
           {fullscreenCam && (
             <Box sx={{ position: "relative" }}>
               {fullscreenCam.stream_url ? (
-                <img src={fullscreenCam.stream_url} alt={fullscreenCam.display_name} style={{ width: "100%", display: "block" }} width={1280} height={960} />
+                isHlsUrl(fullscreenCam.stream_url)
+                  ? <Box sx={{ aspectRatio: "16/9", width: "100%", bgcolor: "#000" }}><LiveStreamPlayer streamId={hlsStreamId(fullscreenCam.stream_url)} /></Box>
+                  : <img src={fullscreenCam.stream_url} alt={fullscreenCam.display_name} style={{ width: "100%", display: "block" }} width={1280} height={960} />
               ) : (
                 <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
                   <VideocamOffOutlinedIcon sx={{ fontSize: 52, color: "rgba(255,255,255,0.25)" }} />

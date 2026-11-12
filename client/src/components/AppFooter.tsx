@@ -66,9 +66,9 @@ export function AppFooter() {
           Powered by
         </Typography>
         <img
-          src={`${import.meta.env.BASE_URL}AccessGenieLogo.svg`}
-          alt="AccessGenie"
-          style={{ height: 22, width: "auto" }}
+          src={`${import.meta.env.BASE_URL}brand/woxsen-logo.png`}
+          alt="Woxsen University"
+          style={{ height: 26, width: "auto" }}
         />
       </Box>
     </Box>

@@ -167,7 +167,7 @@ function parseDateRange(query) {
 function normalizeLocation(name) {
   if (!name) return "";
   const n = name.trim();
-  if (/jubilee|jublee/i.test(n)) return "Banjara Hills";
+  if (/woxsen/i.test(n)) return "Woxsen University";
   return n;
 }
 
@@ -196,7 +196,7 @@ router.get("/cameras", requireAuth, async (_req, res) => {
               l.id AS location_id, l.name AS location_name, c.stream_url
        FROM   meghavi_cameras c
        JOIN   meghavi_locations l ON l.id = c.location_id
-       WHERE  c.hidden = false
+       WHERE  c.hidden = false AND c.stream_url IS NOT NULL
        ORDER  BY l.id, c.id`
     );
     res.json({ cameras: rows });
@@ -375,7 +375,7 @@ router.get("/dashboard/summary", requireAuth, async (req, res) => {
       ),
       pool.query(
         `SELECT e.id, e.saved_at, e.owner_id, e.thumbnail_url, e.snapshot_url,
-                COALESCE(c.display_name, 'Banjara Hills Camera') AS camera_name
+                COALESCE(c.display_name, 'Woxsen Camera') AS camera_name
          FROM meghavi_frisking_bag_events e
          LEFT JOIN meghavi_cameras c ON c.id = e.camera_id
          WHERE e.saved_at >= (?::date)::timestamp AT TIME ZONE 'Asia/Kolkata'
@@ -1366,8 +1366,8 @@ router.get("/analytics/frisking-bag", requireAuth, async (req, res) => {
       `SELECT e.id, e.saved_at, e.frame_number, e.video_time, e.class_name,
               e.track_id, e.confidence, e.owner_id, e.owner_distance_px,
               e.thumbnail_url, e.snapshot_url, e.video_url,
-              COALESCE(c.display_name, 'Banjara Hills Camera') AS camera_name,
-              COALESCE(NULLIF(l.name, ''), 'Banjara Hills')   AS location_name
+              COALESCE(c.display_name, 'Campus Camera') AS camera_name,
+              COALESCE(NULLIF(l.name, ''), 'Woxsen University') AS location_name
        FROM  meghavi_frisking_bag_events e
        LEFT JOIN meghavi_cameras  c ON c.id  = e.camera_id
        LEFT JOIN meghavi_locations l ON l.id = c.location_id
@@ -1464,8 +1464,8 @@ router.get("/alerts", requireAuth, async (req, res) => {
   try {
     const [fbRows] = await pool.query(
       `SELECT e.id, e.saved_at, e.class_name, e.owner_id, e.thumbnail_url, e.snapshot_url, e.video_url,
-              COALESCE(c.display_name, 'Banjara Hills Camera') AS camera_name,
-              COALESCE(NULLIF(l.name, ''), 'Banjara Hills')   AS location_name
+              COALESCE(c.display_name, 'Campus Camera') AS camera_name,
+              COALESCE(NULLIF(l.name, ''), 'Woxsen University') AS location_name
        FROM meghavi_frisking_bag_events e
        LEFT JOIN meghavi_cameras   c ON c.id  = e.camera_id
        LEFT JOIN meghavi_locations l ON l.id  = c.location_id
@@ -1885,6 +1885,7 @@ function prevPeriod(from, to) {
 const _walkinDirsCache = { dirs: null };
 function remapWalkinUrl(u, preferredDate) {
   if (!u) return null;
+  if (u.startsWith("/")) return u;   // already a resolved absolute path
   const file = u.split("/").pop();
   if (!_walkinDirsCache.dirs) {
     _walkinDirsCache.dirs = dateDirs(path.join(INFERENCE_ROOT, "walkins"));
@@ -1896,6 +1897,40 @@ function remapWalkinUrl(u, preferredDate) {
     }
   }
   return null;
+}
+
+// Reads individual *.json event files from dated subdirs under inference-data/walkins/
+function loadSubdirWalkinRows() {
+  const walkinRoot = path.join(INFERENCE_ROOT, "walkins");
+  const rows = [];
+  for (const date of dateDirs(walkinRoot)) {
+    const dateDir = path.join(walkinRoot, date);
+    let files;
+    try { files = fs.readdirSync(dateDir); } catch { continue; }
+    for (const fname of files) {
+      if (!fname.endsWith(".json") || fname.startsWith(".")) continue;
+      const ev = readJsonSafe(path.join(dateDir, fname));
+      if (!ev || !ev.timestamp) continue;
+      const raw = ev.timestamp || "";
+      const detected_at = raw.includes("+") || raw.endsWith("Z") ? raw : raw + "+05:30";
+      // body_crop / face_crop are relative paths like "data/walkins/YYYY-MM-DD/file.jpg"
+      // Server serves /inference-data/* → inference-data/, so strip leading "data/" and prepend /inference-data/
+      const toUrl = (p) => p ? `/inference-data/${p.replace(/^data\//, "")}` : null;
+      rows.push({
+        event_id: `walkin-${date}-tid${ev.track_id ?? fname}`,
+        camera_key: ev.camera_id || "unknown",
+        camera_name: ev.camera_id || "Campus Camera",
+        location: "Campus",
+        detected_at,
+        person_count: 1,
+        confidence: null,
+        snapshot_url: toUrl(ev.body_crop ?? ev.full_frame),
+        face_crop_url: ev.has_face ? toUrl(ev.face_crop) : null,
+        dwell_seconds: 0,
+      });
+    }
+  }
+  return rows;
 }
 
 async function getDismissed() {
@@ -1920,7 +1955,7 @@ function loadStaffSqlRows() {
       const filename = m[7].split(/[/\\]/).pop();
       rows.push({
         id: parseInt(m[1]), camera_key: m[2], camera_name: m[3],
-        location: "Gachibowli Complex",
+        location: "Woxsen",
         detected_at: m[4], end_time: m[5],
         absent_duration_seconds: secs,
         severity: secs >= 600 ? "high" : secs >= 180 ? "moderate" : "low",
@@ -1941,7 +1976,6 @@ function loadMGRows() {
     const events   = readJsonSafe(logFile);
     if (!Array.isArray(events)) continue;
     for (const ev of events) {
-      const isBH = ev.camera_id === "Banjara Hills";
       const raw  = ev.saved_at || "";
       const detected_at = raw.includes("+") || raw.endsWith("Z") ? raw : raw + "+05:30";
       const pngName = ev.snapshot || "";
@@ -1950,9 +1984,9 @@ function loadMGRows() {
         : null;
       rows.push({
         id: `${date}/${pngName || detected_at}`,
-        camera_key: ev.camera_id || "Banjara Hills",
-        camera_name: isBH ? "BH Desk" : (ev.camera_id || ""),
-        location: normalizeLocation(isBH ? "Banjara Hills" : (ev.site_name || "")),
+        camera_key: ev.camera_id || "Campus-Cam",
+        camera_name: ev.camera_id === "Woxsen" ? "Woxsen Desk" : (ev.camera_id || ""),
+        location: normalizeLocation(ev.site_name || "Woxsen"),
         detected_at,
         greeted: ev.status === "SUCCESS",
         duration_seconds: Math.round(ev.duration_seconds || 0),
@@ -1969,7 +2003,9 @@ function loadMGRows() {
 
 function fileWalkinsAnalytics(from, to, dismissed = {}) {
   const dw  = dismissed.walkins ?? new Set();
-  const all = (readJsonSafe(WALKINS_LOG)?.events ?? []).filter(e => !dw.has(String(e.event_id)));
+  const legacyEvents = readJsonSafe(WALKINS_LOG)?.events ?? [];
+  const subdirRows   = loadSubdirWalkinRows();
+  const all = [...legacyEvents, ...subdirRows].filter(e => !dw.has(String(e.event_id)));
   const ev  = all.filter(e => { const d = istDate(e.detected_at); return d >= from && d <= to; });
   const total    = ev.reduce((s,e) => s + (e.person_count||1), 0);
   const evWithDwell = ev.filter(e => e.dwell_seconds > 0);
@@ -2025,14 +2061,79 @@ function loadSubdirStaffRows() {
       rows.push({
         id: `staff-${date}-${videoFile || detected_at}`,
         camera_key: ev.camera_id || "",
-        camera_name: ev.camera_id === "Banjara Hills" ? "BH Desk" : (ev.camera_id || ""),
-        location: normalizeLocation(ev.site_name === "meghavi" ? "Banjara Hills" : (ev.site_name || "")),
+        camera_name: ev.camera_id === "Woxsen" ? "Woxsen Desk" : (ev.camera_id || ""),
+        location: normalizeLocation(ev.site_name || ""),
         detected_at,
         end_time: null,
         absent_duration_seconds: secs,
         severity: secs >= 600 ? "high" : secs >= 180 ? "moderate" : "low",
         snapshot_url: null,
         video_url,
+      });
+    }
+  }
+  return rows;
+}
+
+// ---------------------------------------------------------------------------
+// Overcrowding & After-Hours file loaders
+// ---------------------------------------------------------------------------
+
+function loadCrowdRows() {
+  const root = path.join(INFERENCE_ROOT, "overcrowding");
+  const rows = [];
+  for (const date of dateDirs(root)) {
+    const dateDir = path.join(root, date);
+    let files;
+    try { files = fs.readdirSync(dateDir); } catch { continue; }
+    for (const fname of files) {
+      if (!fname.endsWith(".json") || fname.startsWith(".")) continue;
+      const ev = readJsonSafe(path.join(dateDir, fname));
+      if (!ev || !ev.timestamp) continue;
+      const raw = ev.timestamp;
+      const detected_at = raw.includes("+") || raw.endsWith("Z") ? raw : raw + "+05:30";
+      const toUrl = (p) => p ? `/inference-data/${p.replace(/^data\//, "")}` : null;
+      rows.push({
+        id: `crowd-${date}-${fname.replace(".json", "")}`,
+        camera_id: ev.camera_id || "Campus-Cam",
+        camera_name: ev.camera_id || "Campus Camera",
+        location: "Woxsen University",
+        detected_at,
+        person_count: ev.person_count || 0,
+        threshold: ev.threshold || 4,
+        snapshot_url: toUrl(ev.snapshot),
+        severity: (ev.person_count || 0) >= 6 ? "high" : "warning",
+      });
+    }
+  }
+  return rows;
+}
+
+function loadAfterHoursRows() {
+  const root = path.join(INFERENCE_ROOT, "after_hours");
+  const rows = [];
+  for (const date of dateDirs(root)) {
+    const dateDir = path.join(root, date);
+    let files;
+    try { files = fs.readdirSync(dateDir); } catch { continue; }
+    for (const fname of files) {
+      if (!fname.endsWith(".json") || fname.startsWith(".")) continue;
+      const ev = readJsonSafe(path.join(dateDir, fname));
+      if (!ev || !ev.timestamp) continue;
+      const raw = ev.timestamp;
+      const detected_at = raw.includes("+") || raw.endsWith("Z") ? raw : raw + "+05:30";
+      // JSON snapshot paths use "data/afterhours/..." but the actual folder is "after_hours"
+      const toUrl = (p) => p ? `/inference-data/${p.replace(/^data\/afterhours\//, "after_hours/")}` : null;
+      rows.push({
+        id: `ah-${date}-${fname.replace(".json", "")}`,
+        camera_id: ev.camera_id || "Campus-Cam",
+        camera_name: ev.camera_id || "Campus Camera",
+        location: "Woxsen University",
+        detected_at,
+        person_count: ev.person_count || 0,
+        business_hours: ev.business_hours || "09:00 – 18:00",
+        snapshot_url: toUrl(ev.snapshot),
+        severity: "warning",
       });
     }
   }
@@ -2118,12 +2219,76 @@ function fileMeetGreetAnalytics(from, to, dismissed = {}) {
   };
 }
 
+// GET /api/meghavi/analytics/overcrowding
+router.get("/analytics/overcrowding", requireAuth, (req, res) => {
+  try {
+    const { from, to } = parseDateRange(req.query);
+    const all  = loadCrowdRows();
+    const rows = all.filter(e => { const d = istDate(e.detected_at); return d >= from && d <= to; });
+    const hMap = {}, dMap = {};
+    for (const e of rows) {
+      const h = istHourStr(e.detected_at); const d = istDate(e.detected_at);
+      hMap[h] = (hMap[h]||0) + 1; dMap[d] = (dMap[d]||0) + 1;
+    }
+    const { prevFrom, prevTo } = prevPeriod(from, to);
+    const prev = all.filter(e => { const d = istDate(e.detected_at); return d >= prevFrom && d <= prevTo; });
+    const peakEntry = Object.entries(hMap).sort((a,b) => b[1]-a[1])[0];
+    res.json({
+      from, to,
+      total: rows.length,
+      prev_total: prev.length,
+      cameras_active: new Set(rows.map(e => e.camera_id)).size,
+      alerts_triggered: rows.filter(e => e.severity === "high").length,
+      peak_hour: peakEntry ? peakEntry[0] : null,
+      hourly_trend: Object.entries(hMap).sort().map(([hour,count]) => ({ hour, count })),
+      by_day: Object.entries(dMap).sort().map(([d,count]) => ({
+        day: new Date(d+"T12:00:00Z").toLocaleDateString("en-IN", { weekday:"short", day:"2-digit", month:"short", timeZone:"UTC" }), count,
+      })),
+      events: rows.map(e => ({
+        id: e.id, camera_name: e.camera_name, location: e.location,
+        detected_at: e.detected_at, person_count: e.person_count,
+        threshold: e.threshold, severity: e.severity, snapshot_url: e.snapshot_url,
+      })),
+    });
+  } catch(e) { console.error("[meghavi] overcrowding:", e.message); res.status(500).json({ error:"server_error" }); }
+});
+
+// GET /api/meghavi/analytics/after-hours
+router.get("/analytics/after-hours", requireAuth, (req, res) => {
+  try {
+    const { from, to } = parseDateRange(req.query);
+    const all  = loadAfterHoursRows();
+    const rows = all.filter(e => { const d = istDate(e.detected_at); return d >= from && d <= to; });
+    const hMap = {}, dMap = {};
+    for (const e of rows) {
+      const h = istHourStr(e.detected_at); const d = istDate(e.detected_at);
+      hMap[h] = (hMap[h]||0) + 1; dMap[d] = (dMap[d]||0) + 1;
+    }
+    const { prevFrom, prevTo } = prevPeriod(from, to);
+    const prev = all.filter(e => { const d = istDate(e.detected_at); return d >= prevFrom && d <= prevTo; });
+    res.json({
+      from, to,
+      total: rows.length,
+      prev_total: prev.length,
+      cameras_triggered: new Set(rows.map(e => e.camera_id)).size,
+      alerts_sent: rows.length,
+      avg_duration: null,
+      hourly_trend: Object.entries(hMap).sort().map(([hour,count]) => ({ hour, count })),
+      events: rows.map(e => ({
+        id: e.id, camera_name: e.camera_name, location: e.location,
+        detected_at: e.detected_at, person_count: e.person_count,
+        business_hours: e.business_hours, severity: e.severity, snapshot_url: e.snapshot_url,
+      })),
+    });
+  } catch(e) { console.error("[meghavi] after-hours:", e.message); res.status(500).json({ error:"server_error" }); }
+});
+
 function fileAlerts(from, to, dismissed = {}) {
   const dw = dismissed.walkins ?? new Set();
   const ds = dismissed.staff_unavailability ?? new Set();
   const dm = dismissed.meet_greet ?? new Set();
   const NOW = Date.now();
-  const walkinEv = (readJsonSafe(WALKINS_LOG)?.events??[])
+  const walkinEv = [...(readJsonSafe(WALKINS_LOG)?.events??[]), ...loadSubdirWalkinRows()]
     .filter(e=>!dw.has(String(e.event_id)))
     .filter(e=>{const d=istDate(e.detected_at);return d>=from&&d<=to;})
     .map(e=>{
@@ -2150,15 +2315,33 @@ function fileAlerts(from, to, dismissed = {}) {
       snapshot_url:e.snapshot_url,video_url:null,person_count:null,greeted:e.greeted,
       absent_duration_seconds:null,severity_raw:!e.greeted?"warning":"info"}));
 
-  const allEv = [...staffEv,...mgEv,...walkinEv].sort((a,b)=>new Date(b.detected_at)-new Date(a.detected_at));
+  const crowdEv = loadCrowdRows()
+    .filter(e=>{const d=istDate(e.detected_at);return d>=from&&d<=to;})
+    .map(e=>({id:e.id,category:"overcrowding",detected_at:e.detected_at,
+      camera_key:e.camera_id,camera_name:e.camera_name,location:e.location,
+      snapshot_url:e.snapshot_url,video_url:null,person_count:e.person_count,
+      greeted:null,absent_duration_seconds:null,dwell_seconds:0,severity_raw:e.severity}));
+
+  const ahEv = loadAfterHoursRows()
+    .filter(e=>{const d=istDate(e.detected_at);return d>=from&&d<=to;})
+    .map(e=>({id:e.id,category:"after_hours",detected_at:e.detected_at,
+      camera_key:e.camera_id,camera_name:e.camera_name,location:e.location,
+      snapshot_url:e.snapshot_url,video_url:null,person_count:e.person_count,
+      greeted:null,absent_duration_seconds:null,dwell_seconds:0,severity_raw:"warning"}));
+
+  const allEv = [...staffEv,...mgEv,...walkinEv,...crowdEv,...ahEv].sort((a,b)=>new Date(b.detected_at)-new Date(a.detected_at));
   const events = allEv.map(e=>{
     const age=NOW-new Date(e.detected_at).getTime();
     const status=age<3600000?"active":age<14400000?"investigating":"resolved";
     const title=e.category==="staff_unavailability"?(e.absent_duration_seconds>1200?"Critical Staff Absence":"Reception Unattended")
       :e.category==="meet_greet"?(e.greeted?"Customer Greeted":"Customer Not Greeted")
+      :e.category==="overcrowding"?"Crowd Gathering Detected"
+      :e.category==="after_hours"?"After-Hours Activity Detected"
       :(e.person_count>1?"Group Walk-in Detected":"Walk-in Detected");
     const description=e.category==="staff_unavailability"?`${e.camera_name} unattended for ${Math.round(e.absent_duration_seconds/60)}m`
       :e.category==="walkins"?`${e.person_count} person${e.person_count>1?"s":""} at ${e.camera_name}`
+      :e.category==="overcrowding"?`${e.person_count} persons detected at ${e.camera_name}`
+      :e.category==="after_hours"?`${e.person_count} person${e.person_count>1?"s":""} detected outside hours at ${e.camera_name}`
       :(e.greeted?`Customer greeted at ${e.camera_name}`:`Customer not greeted at ${e.camera_name}`);
     return {id:e.id,category:e.category,severity:e.severity_raw,status,title,description,
       location:e.location,camera:e.camera_key,occurred_at:e.detected_at,
@@ -2184,7 +2367,7 @@ function fileDashboard(from, to, dismissed = {}) {
   const dw = dismissed.walkins              ?? new Set();
   const ds = dismissed.staff_unavailability ?? new Set();
   const dm = dismissed.meet_greet           ?? new Set();
-  const allWalkins = (readJsonSafe(WALKINS_LOG)?.events??[]).filter(e=>!dw.has(String(e.event_id)));
+  const allWalkins = [...(readJsonSafe(WALKINS_LOG)?.events??[]), ...loadSubdirWalkinRows()].filter(e=>!dw.has(String(e.event_id)));
   const walkinEv = allWalkins.filter(e=>{const d=istDate(e.detected_at);return d>=from&&d<=to;});
   const walkinTotal = walkinEv.reduce((s,e)=>s+(e.person_count||1),0);
   const { prevFrom, prevTo } = prevPeriod(from, to);
@@ -2237,6 +2420,8 @@ function fileDashboard(from, to, dismissed = {}) {
     meet_greet_ungreeted: mgUngreeted,
     greet_rate_pct: mgTotal>0?+(100*(mgTotal-mgUngreeted)/mgTotal).toFixed(1):null,
     total_alerts: alertData.events.length, prev_total_alerts: prevAlertData.events.length,
+    crowd_events_today: alertData.events.filter(e=>e.category==="overcrowding").length,
+    after_hours_today:  alertData.events.filter(e=>e.category==="after_hours").length,
     trend, recent_alerts,
   };
 }

@@ -34,6 +34,8 @@ const CATEGORY_CFG: Record<string, { label: string; color: string; icon: React.R
   staff_unavailability: { label: "Staff Unavailability",  color: pnp.warning, icon: <PersonOffIcon           sx={{ fontSize: 13 }} />, route: "/analytics/staff-unavailability" },
   meet_greet:           { label: "Meet & Greet",          color: pnp.blue,    icon: <AccessTimeFilledIcon    sx={{ fontSize: 13 }} />, route: "/analytics/meet-greet" },
   frisking_bag:         { label: "Frisking Bag",          color: "#7C3AED",   icon: <WorkOutlineOutlinedIcon sx={{ fontSize: 13 }} />, route: "/analytics/frisking-bag" },
+  overcrowding:         { label: "Crowd Gathering",       color: "#D97706",   icon: <PeopleIcon              sx={{ fontSize: 13 }} />, route: "/analytics/crowd-gathering" },
+  after_hours:          { label: "After Hours",           color: "#7C3AED",   icon: <PersonOffIcon           sx={{ fontSize: 13 }} />, route: "/analytics/after-hours" },
 };
 
 const SEVERITY_COLOR: Record<string, string> = { high: pnp.danger, warning: pnp.warning, info: pnp.blue };
@@ -105,10 +107,10 @@ export function ActiveAlertsPage() {
 
       {/* KPI Row */}
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ flexWrap: "wrap" }}>
-        <KpiCard icon={<NotificationsNoneOutlinedIcon />} label="Total Alerts Today" value={totalAll} sub={`${activeCount} currently active`} iconColor={pnp.danger} iconBg={pnp.dangerSoft} />
-        <KpiCard icon={<PeopleAltOutlinedIcon />} label="Walk-in Alerts" value={breakdown.find((b) => b.category === "walkins")?.count ?? 0} sub={`${breakdown.find((b) => b.category === "walkins")?.percentage ?? 0}% of total`} iconColor={pnp.success} iconBg={pnp.successSoft} onClick={() => navigate("/analytics/walk-ins")} />
-        <KpiCard icon={<PersonOutlineOutlinedIcon />} label="Staff Unavailability" value={breakdown.find((b) => b.category === "staff_unavailability")?.count ?? 0} sub={`${breakdown.find((b) => b.category === "staff_unavailability")?.percentage ?? 0}% of total`} iconColor={pnp.warning} iconBg={pnp.warningSoft} onClick={() => navigate("/analytics/staff-unavailability")} />
-        <KpiCard icon={<AccessTimeOutlinedIcon />} label="Meet & Greet Alerts" value={breakdown.find((b) => b.category === "meet_greet")?.count ?? 0} sub={`${breakdown.find((b) => b.category === "meet_greet")?.percentage ?? 0}% of total`} iconColor={pnp.blue} iconBg={pnp.blueSoft} onClick={() => navigate("/analytics/meet-greet")} />
+        <KpiCard icon={<NotificationsNoneOutlinedIcon />} label="Total Alerts" value={totalAll} sub={`${activeCount} currently active`} iconColor={pnp.danger} iconBg={pnp.dangerSoft} />
+        <KpiCard icon={<PeopleAltOutlinedIcon />} label="Walk-ins" value={breakdown.find((b) => b.category === "walkins")?.count ?? 0} sub={`${breakdown.find((b) => b.category === "walkins")?.percentage ?? 0}% of total`} iconColor={pnp.success} iconBg={pnp.successSoft} onClick={() => navigate("/analytics/walk-ins")} />
+        <KpiCard icon={<PersonOutlineOutlinedIcon />} label="Crowd Gathering" value={breakdown.find((b) => b.category === "overcrowding")?.count ?? 0} sub={`${breakdown.find((b) => b.category === "overcrowding")?.percentage ?? 0}% of total`} iconColor="#D97706" iconBg="#D9770614" onClick={() => navigate("/analytics/crowd-gathering")} />
+        <KpiCard icon={<AccessTimeOutlinedIcon />} label="After Hours" value={breakdown.find((b) => b.category === "after_hours")?.count ?? 0} sub={`${breakdown.find((b) => b.category === "after_hours")?.percentage ?? 0}% of total`} iconColor="#7C3AED" iconBg="#7C3AED14" onClick={() => navigate("/analytics/after-hours")} />
       </Stack>
 
       {/* Charts Row */}

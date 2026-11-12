@@ -53,6 +53,8 @@ export interface DashboardSummary {
   greet_rate_pct: number | null;
   total_alerts: number;
   prev_total_alerts: number;
+  crowd_events_today: number;
+  after_hours_today: number;
   trend: TrendPoint[];
   recent_alerts: RecentAlert[];
 }
@@ -395,6 +397,73 @@ export interface InferencesData {
 
 export function useInferences() {
   const { data, loading, error } = useFetch<InferencesData>("/meghavi/inferences");
+  return { data, loading, error };
+}
+
+// ---------------------------------------------------------------------------
+// Overcrowding
+// ---------------------------------------------------------------------------
+
+export interface CrowdEvent {
+  id: string;
+  camera_name: string;
+  location: string;
+  detected_at: string;
+  person_count: number;
+  threshold: number;
+  severity: string;
+  snapshot_url: string | null;
+}
+
+export interface OvercrowdingData {
+  from: string;
+  to: string;
+  total: number;
+  prev_total: number;
+  cameras_active: number;
+  alerts_triggered: number;
+  peak_hour: string | null;
+  hourly_trend: { hour: string; count: number }[];
+  by_day: { day: string; count: number }[];
+  events: CrowdEvent[];
+}
+
+export function useOvercrowdingData(from: string | null, to: string | null) {
+  const url = from && to ? `/meghavi/analytics/overcrowding?from=${from}&to=${to}` : null;
+  const { data, loading, error } = useFetch<OvercrowdingData>(url);
+  return { data, loading, error };
+}
+
+// ---------------------------------------------------------------------------
+// After Hours
+// ---------------------------------------------------------------------------
+
+export interface AfterHoursEvent {
+  id: string;
+  camera_name: string;
+  location: string;
+  detected_at: string;
+  person_count: number;
+  business_hours: string;
+  severity: string;
+  snapshot_url: string | null;
+}
+
+export interface AfterHoursData {
+  from: string;
+  to: string;
+  total: number;
+  prev_total: number;
+  cameras_triggered: number;
+  alerts_sent: number;
+  avg_duration: number | null;
+  hourly_trend: { hour: string; count: number }[];
+  events: AfterHoursEvent[];
+}
+
+export function useAfterHoursData(from: string | null, to: string | null) {
+  const url = from && to ? `/meghavi/analytics/after-hours?from=${from}&to=${to}` : null;
+  const { data, loading, error } = useFetch<AfterHoursData>(url);
   return { data, loading, error };
 }
 

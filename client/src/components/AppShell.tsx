@@ -16,14 +16,12 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import VideocamRoundedIcon from "@mui/icons-material/VideocamRounded";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import DirectionsWalkOutlinedIcon from "@mui/icons-material/DirectionsWalkOutlined";
-import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
-import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
-import WavingHandOutlinedIcon from "@mui/icons-material/WavingHandOutlined";
-import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import NightsStayOutlinedIcon from "@mui/icons-material/NightsStayOutlined";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -38,7 +36,6 @@ import { SITE_BRANDING } from "../i18n/lang";
 import { ds } from "../lib/dsTokens";
 import { rail, railNavItemSx, railSidebarBg } from "../lib/railTheme";
 import { AppFooter } from "./AppFooter";
-import { PoweredByBcss } from "./PoweredByBcss";
 
 const DRAWER_WIDTH = 250;
 const DRAWER_COLLAPSED = 140;
@@ -62,12 +59,10 @@ const NAV: NavItem[] = [
   { label: "OPERATIONS", path: null, icon: null, section: true },
   { label: "Dashboard",  path: "/dashboard", icon: <DashboardIcon />, page: "meghavi_dashboard" },
   // Analytics collapsible group
-  { label: "Analytics",  path: null, icon: <BarChartOutlinedIcon />, groupHeader: true, groupId: ANALYTICS_GROUP },
-  { label: "Walk-ins",              path: "/analytics/walk-ins",             icon: <DirectionsWalkOutlinedIcon />, page: "meghavi_walkins",              groupId: ANALYTICS_GROUP },
-  { label: "Meet & Greet",          path: "/analytics/meet-greet",           icon: <WavingHandOutlinedIcon />,    page: "meghavi_meet_greet",            groupId: ANALYTICS_GROUP },
-  { label: "Staff Unavailability",  path: "/analytics/staff-unavailability", icon: <PersonOffOutlinedIcon />,     page: "meghavi_staff_unavailability",  groupId: ANALYTICS_GROUP },
-  { label: "Waiting Time",          path: "/analytics/waiting-time",         icon: <TimerOutlinedIcon />,         page: "meghavi_waiting_time",          groupId: ANALYTICS_GROUP },
-  { label: "Frisking Bag",          path: "/analytics/frisking-bag",         icon: <WorkOutlineOutlinedIcon />,   page: "meghavi_frisking_bag",          groupId: ANALYTICS_GROUP },
+  { label: "Analytics",        path: null, icon: <BarChartOutlinedIcon />, groupHeader: true, groupId: ANALYTICS_GROUP },
+  { label: "Walk-Ins",         path: "/analytics/walk-ins",         icon: <DirectionsWalkOutlinedIcon />, page: "meghavi_walkins",       groupId: ANALYTICS_GROUP },
+  { label: "Crowd Gathering",  path: "/analytics/crowd-gathering",  icon: <GroupsOutlinedIcon />,         page: "monitoring_loitering",  groupId: ANALYTICS_GROUP },
+  { label: "After Hours",      path: "/analytics/after-hours",      icon: <NightsStayOutlinedIcon />,     page: "monitoring_after_hours", groupId: ANALYTICS_GROUP },
   // Monitoring
   { label: "Cameras", path: "/live",    icon: <VideocamRoundedIcon />,          page: "meghavi_cameras" },
   { label: "Alerts",  path: "/alerts",  icon: <NotificationsNoneOutlinedIcon />, page: "meghavi_alerts" },
@@ -82,11 +77,9 @@ const NAV: NavItem[] = [
 const navPageTitle: Record<string, string> = {
   "/dashboard": "Video Analytics Dashboard",
   "/live": "Cameras Online",
-  "/analytics/walk-ins": "Walk-ins Analytics",
-  "/analytics/waiting-time": "Customer Waiting Time",
-  "/analytics/frisking-bag": "Frisking Bag",
-  "/analytics/staff-unavailability": "Staff Unavailability",
-  "/analytics/meet-greet": "Meet & Greet Analytics",
+  "/analytics/walk-ins": "Walk-Ins",
+  "/analytics/crowd-gathering": "Crowd Gathering",
+  "/analytics/after-hours": "After Hours",
   "/reports": "Operational Reports",
   "/alerts": "Active Alerts",
   "/staff": "Staff Directory & Roster",
@@ -96,19 +89,17 @@ const navPageTitle: Record<string, string> = {
 };
 
 const navPageSubtitle: Record<string, string> = {
-  "/dashboard": "Real-time insights for smarter wellness center management",
-  "/live": "Live video surveillance feeds across wellness reception and therapy sections",
-  "/analytics/walk-ins": "Track and analyze walk-in customer patterns across all wellness areas",
-  "/analytics/waiting-time": "Monitor and analyze customer waiting experience and service delays",
-  "/analytics/frisking-bag": "Detect and review bag detection events captured during frisking checks",
-  "/analytics/staff-unavailability": "Monitor staff availability, idle periods, and department coverage patterns",
-  "/analytics/meet-greet": "Track customer greet interactions, missed greets, and staff response times",
-  "/reports": "Automated PDF summaries, daily walk-in briefings, and raw analytics exports",
-  "/alerts": "Real-time alerts for excessive waiting time, staff shortages, and unexpected surges",
-  "/staff": "Real-time tracking of therapists, receptionists, and wellness consultants",
+  "/dashboard": "Real-time AI-powered insights for smarter campus management",
+  "/live": "Live video surveillance feeds across campus entry points and facilities",
+  "/analytics/walk-ins": "Track and analyse campus footfall patterns across all monitored zones",
+  "/analytics/crowd-gathering": "Detect and review crowd gathering anomalies across monitored zones",
+  "/analytics/after-hours": "Monitor activity detected outside permitted hours across all cameras",
+  "/reports": "Automated PDF summaries, daily briefings, and raw analytics exports",
+  "/alerts": "Real-time alerts for crowd surges, staff shortages, and security events",
+  "/staff": "System accounts for faculty, security staff, and administrators",
   "/settings": "Manage alert thresholds, occupancy limits, and notification preferences",
   "/audit": "Per-user activity history, session breakdown, and cross-user audit trail",
-  "/integrations": "Manage connected cameras, inference models, and wellness alerting webhooks",
+  "/integrations": "Manage connected cameras, inference models, and campus alerting webhooks",
 };
 
 function readCollapsed(): boolean {
@@ -414,26 +405,28 @@ function AppShellInner() {
             sx={{
               bgcolor: "#FFFFFF",
               borderRadius: "10px",
-              px: expanded ? 1.5 : 0.75,
-              py: expanded ? 1.25 : 0.75,
+              px: expanded ? 2 : 0.75,
+              py: expanded ? 1.5 : 0.75,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               boxShadow: "0 2px 10px -2px rgba(0,0,0,0.35)",
               overflow: "hidden",
               width: expanded ? "100%" : 44,
-              height: 44,
+              minHeight: expanded ? 64 : 44,
+              height: expanded ? "auto" : 44,
               transition: "all 260ms cubic-bezier(0.22,1,0.36,1)",
             }}
           >
             <img
-              src={`${import.meta.env.BASE_URL}meghavi.png`}
-              alt="Meghavi Wellness"
+              src={`${import.meta.env.BASE_URL}brand/woxsen-logo.png`}
+              alt="Woxsen University"
               style={{
-                width: expanded ? "100%" : 30,
-                maxWidth: expanded ? 160 : 30,
-                height: "auto",
+                width: expanded ? "100%" : "auto",
+                maxWidth: expanded ? 200 : undefined,
+                height: expanded ? "auto" : 36,
                 display: "block",
+                objectFit: "contain",
                 transition: "all 260ms cubic-bezier(0.22,1,0.36,1)",
               }}
             />
@@ -445,14 +438,6 @@ function AppShellInner() {
       <List dense sx={{ flex: 1, py: 0 }}>
         {visibleNav.map((item) => renderItem(item))}
       </List>
-
-      {/* Bottom: partner logo */}
-      <Box sx={{ mt: "auto", pt: 1.5, borderTop: `1px solid ${rail.divider}` }}>
-        {expanded
-          ? <PoweredByBcss variant="sidebar" />
-          : <PoweredByBcss variant="sidebarCollapsed" />
-        }
-      </Box>
     </Box>
   );
 

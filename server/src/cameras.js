@@ -1,4 +1,6 @@
 
+
+
 // Camera ids and stream URLs are fixed by the receiver pipeline — only the
 // display names are site-specific.
 const CAMERA_REGISTRY = [

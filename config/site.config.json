@@ -29,7 +29,7 @@
   },
   "walkins": {
     "sites": [
-      { "siteId": 1, "name": "Meghavi Wellness" }
+      { "siteId": 1, "name": "Woxsen University" }
     ],
     "entrances": [
       { "cameraId": "Right Entrance", "name": "Main Entrance" }
@@ -39,7 +39,7 @@
     "severityAlarm": 70,
     "severityCritical": 85,
     "sites": [
-      { "name": "Meghavi Wellness" }
+      { "name": "Woxsen University" }
     ],
     "zones": [
       { "cameraId": "Overview", "name": "Rear Exterior" }

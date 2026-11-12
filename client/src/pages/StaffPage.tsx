@@ -75,7 +75,7 @@ export function StaffPage() {
             Staff Directory & Roster
           </Typography>
           <Typography sx={{ fontSize: "0.8125rem", color: "#64748B", mt: 0.25 }}>
-            System accounts for therapists, receptionists, and wellness consultants
+            System accounts for faculty, security staff, and administrators
           </Typography>
         </Box>
         <TextField

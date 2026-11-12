@@ -1,28 +1,54 @@
+import { useMemo } from "react";
 import { Box, CircularProgress, Paper, Typography } from "@mui/material";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
-import { useDashboardSummary } from "../../../lib/meghaviApi";
+import { useWalkinsAnalytics, useOvercrowdingData, useAfterHoursData } from "../../../lib/meghaviApi";
 import { pnp } from "../../../lib/pnpTheme";
 
 const COLORS = {
-  walkins:     "#0B4964",
-  meetGreet:   "#4F8A8B",
-  staffUnavail:"#C9964A",
+  walkins:    "#5C9270",
+  crowd:      "#D97706",
+  afterHours: "#7C3AED",
 };
+
+const LEGEND = [
+  { color: COLORS.walkins,    label: "Walk-ins" },
+  { color: COLORS.crowd,      label: "Crowd Gathering" },
+  { color: COLORS.afterHours, label: "After Hours" },
+];
 
 interface Props { from: string; to: string; }
 
+type TrendRow = { hour: string; walkins: number; crowd: number; after_hours: number };
+
 export function MeghaviTodaysTrend({ from, to }: Props) {
-  const { summary, loading } = useDashboardSummary(from, to);
+  const { analytics: walkinsData, loading: wLoading } = useWalkinsAnalytics(from, to);
+  const { data: crowdData,  loading: cLoading } = useOvercrowdingData(from, to);
+  const { data: ahData,     loading: aLoading } = useAfterHoursData(from, to);
 
-  // Filter to business hours with at least one non-zero value
-  const trend = (summary?.trend ?? []).filter(
-    (d) => d.walkins > 0 || d.meet_greet > 0 || d.staff_unavail_pct > 0
-  );
+  const loading = wLoading || cLoading || aLoading;
 
-  const isSingleDay = from === to;
-  const title = isSingleDay ? "TODAY'S TRENDS" : "ACTIVITY TRENDS";
+  const trend: TrendRow[] = useMemo(() => {
+    const map: Record<string, TrendRow> = {};
+    const ensure = (h: string) => {
+      if (!map[h]) map[h] = { hour: h, walkins: 0, crowd: 0, after_hours: 0 };
+    };
+    for (const d of walkinsData?.hourly_trend ?? []) {
+      ensure(d.hour); map[d.hour].walkins = d.walkins;
+    }
+    for (const d of crowdData?.hourly_trend ?? []) {
+      ensure(d.hour); map[d.hour].crowd = d.count;
+    }
+    for (const d of ahData?.hourly_trend ?? []) {
+      ensure(d.hour); map[d.hour].after_hours = d.count;
+    }
+    return Object.values(map)
+      .filter((d) => d.walkins > 0 || d.crowd > 0 || d.after_hours > 0)
+      .sort((a, b) => a.hour.localeCompare(b.hour));
+  }, [walkinsData, crowdData, ahData]);
+
+  const title = from === to ? "TODAY'S TRENDS" : "ACTIVITY TRENDS";
 
   return (
     <Paper elevation={0} sx={{ p: 2.5, borderRadius: "14px", bgcolor: pnp.cardBg, border: pnp.cardBorder, boxShadow: pnp.cardShadow, display: "flex", flexDirection: "column", height: "100%", minHeight: 380 }}>
@@ -31,11 +57,7 @@ export function MeghaviTodaysTrend({ from, to }: Props) {
           {title}
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-          {[
-            { color: COLORS.walkins,      label: "Walk-ins" },
-            { color: COLORS.meetGreet,    label: "Meet & Greet" },
-            { color: COLORS.staffUnavail, label: "Staff Unavailability (%)" },
-          ].map((l) => (
+          {LEGEND.map((l) => (
             <Box key={l.label} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               <Box sx={{ width: 10, height: 10, borderRadius: "2px", bgcolor: l.color }} />
               <Typography sx={{ fontSize: "0.6875rem", fontWeight: 600, color: pnp.textSecondary }}>{l.label}</Typography>
@@ -57,22 +79,19 @@ export function MeghaviTodaysTrend({ from, to }: Props) {
         )}
         {!loading && trend.length > 0 && (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={trend} margin={{ top: 10, right: 36, left: -20, bottom: 0 }} barCategoryGap="30%" barGap={2}>
+            <BarChart data={trend} margin={{ top: 10, right: 8, left: -20, bottom: 0 }} barCategoryGap="30%" barGap={2}>
               <CartesianGrid strokeDasharray="3 3" stroke="#DCE7E8" vertical={false} />
               <XAxis dataKey="hour" stroke={pnp.textMuted} fontSize={11} tickLine={false} axisLine={{ stroke: "#DCE7E8" }} dy={6} />
-              {/* Left axis: meet_greet + staff_unavail_pct */}
-              <YAxis yAxisId="left"  stroke={pnp.textMuted} fontSize={11} tickLine={false} axisLine={false} dx={-4} />
-              {/* Right axis: walkins (own scale so small counts are visible) */}
-              <YAxis yAxisId="right" orientation="right" stroke={COLORS.walkins} fontSize={10} tickLine={false} axisLine={false} dx={4} width={28} tickFormatter={(v) => `${v}w`} />
+              <YAxis stroke={pnp.textMuted} fontSize={11} tickLine={false} axisLine={false} dx={-4} allowDecimals={false} />
               <Tooltip
                 contentStyle={{ backgroundColor: pnp.primary, borderRadius: 8, border: "none", color: "#FFFFFF", fontSize: 12 }}
                 itemStyle={{ color: "#FFFFFF" }}
                 labelStyle={{ color: "#FFFFFF", fontWeight: 700, marginBottom: 4 }}
                 cursor={{ fill: `${pnp.primary}0D` }}
               />
-              <Bar yAxisId="left"  dataKey="meet_greet"        name="Meet & Greet"      fill={COLORS.meetGreet}    radius={[4, 4, 0, 0]} maxBarSize={28} />
-              <Bar yAxisId="left"  dataKey="staff_unavail_pct" name="Staff Unavailability (%)" fill={COLORS.staffUnavail} radius={[4, 4, 0, 0]} maxBarSize={28} />
-              <Bar yAxisId="right" dataKey="walkins"            name="Walk-ins"          fill={COLORS.walkins}      radius={[4, 4, 0, 0]} maxBarSize={28} />
+              <Bar dataKey="walkins"     name="Walk-ins"        fill={COLORS.walkins}    radius={[4, 4, 0, 0]} maxBarSize={28} />
+              <Bar dataKey="crowd"       name="Crowd Gathering" fill={COLORS.crowd}      radius={[4, 4, 0, 0]} maxBarSize={28} />
+              <Bar dataKey="after_hours" name="After Hours"     fill={COLORS.afterHours} radius={[4, 4, 0, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         )}

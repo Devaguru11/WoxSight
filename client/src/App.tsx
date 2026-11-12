@@ -4,15 +4,13 @@ import { AppShell } from "./components/AppShell";
 import { ProtectedLayout } from "./components/ProtectedLayout";
 import { DashboardPage } from "./pages/DashboardPage";
 import { WalkinsAnalyticsPage } from "./pages/analytics/WalkinsAnalyticsPage";
-import { WaitingTimeAnalyticsPage } from "./pages/analytics/WaitingTimeAnalyticsPage";
-import { StaffUnavailabilityAnalyticsPage } from "./pages/analytics/StaffUnavailabilityAnalyticsPage";
+import { CrowdGatheringPage } from "./pages/analytics/CrowdGatheringPage";
+import { AfterHoursPage } from "./pages/analytics/AfterHoursPage";
 import { StaffPage } from "./pages/StaffPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { IntegrationsPage } from "./pages/IntegrationsPage";
 import { ActiveAlertsPage } from "./pages/ActiveAlertsPage";
 import { LiveViewPage } from "./pages/LiveViewPage";
-import { MeetGreetPage } from "./pages/analytics/MeetGreetPage";
-import { FriskingBagAnalyticsPage } from "./pages/analytics/FriskingBagAnalyticsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { KnownFacesPage } from "./pages/KnownFacesPage";
@@ -27,9 +25,9 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Dashboard — guarded by meghavi_dashboard */}
+          {/* Dashboard */}
           <Route path="/dashboard" element={
-            <RequirePage page="meghavi_dashboard" label="Wellness Dashboard">
+            <RequirePage page="meghavi_dashboard" label="Dashboard">
               <DashboardPage />
             </RequirePage>
           } />
@@ -40,24 +38,14 @@ export default function App() {
               <WalkinsAnalyticsPage />
             </RequirePage>
           } />
-          <Route path="/analytics/meet-greet" element={
-            <RequirePage page="meghavi_meet_greet" label="Meet & Greet Analytics">
-              <MeetGreetPage />
+          <Route path="/analytics/crowd-gathering" element={
+            <RequirePage page="monitoring_loitering" label="Crowd Gathering">
+              <CrowdGatheringPage />
             </RequirePage>
           } />
-          <Route path="/analytics/staff-unavailability" element={
-            <RequirePage page="meghavi_staff_unavailability" label="Staff Unavailability">
-              <StaffUnavailabilityAnalyticsPage />
-            </RequirePage>
-          } />
-          <Route path="/analytics/waiting-time" element={
-            <RequirePage page="meghavi_waiting_time" label="Customer Waiting Time">
-              <WaitingTimeAnalyticsPage />
-            </RequirePage>
-          } />
-          <Route path="/analytics/frisking-bag" element={
-            <RequirePage page="meghavi_frisking_bag" label="Frisking Bag Anomaly">
-              <FriskingBagAnalyticsPage />
+          <Route path="/analytics/after-hours" element={
+            <RequirePage page="monitoring_after_hours" label="After Hours">
+              <AfterHoursPage />
             </RequirePage>
           } />
 

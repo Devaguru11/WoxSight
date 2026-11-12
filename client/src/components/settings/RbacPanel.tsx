@@ -97,7 +97,7 @@ export function RbacPanel() {
 
   useEffect(() => { reload(); }, [reload]);
 
-  const meghaviPages = pages.filter((p) => p.group === "Meghavi Wellness");
+  const meghaviPages = pages.filter((p) => p.group === "WoxSight Analytics");
 
   const grouped = meghaviPages.reduce<Record<string, PageDef[]>>((acc, p) => {
     (acc[p.group] ||= []).push(p);
@@ -415,8 +415,7 @@ export function RbacPanel() {
                   error={!!fieldErrs.branch}
                   sx={{ fontSize: "0.875rem" }}>
                   <MenuItem value="" disabled><em style={{ color: "#94A3B8" }}>Select branch…</em></MenuItem>
-                  <MenuItem value="Gachibowli">Gachibowli</MenuItem>
-                  <MenuItem value="Banjara Hills">Banjara Hills</MenuItem>
+                  <MenuItem value="Woxsen">Woxsen</MenuItem>
                 </Select>
                 {fieldErrs.branch && <Typography sx={{ fontSize: "0.75rem", color: ds.danger, mt: 0.5 }}>{fieldErrs.branch}</Typography>}
               </Box>
